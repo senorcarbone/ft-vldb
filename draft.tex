@@ -1,0 +1,220 @@
+% THIS IS AN EXAMPLE DOCUMENT FOR VLDB 2012
+% based on ACM SIGPROC-SP.TEX VERSION 2.7
+% Modified by  Gerald Weber <gerald@cs.auckland.ac.nz>
+% Removed the requirement to include *bbl file in here. (AhmetSacan, Sep2012)
+% Fixed the equation on page 3 to prevent line overflow. (AhmetSacan, Sep2012)
+
+\documentclass{vldb}
+\usepackage{graphicx}
+\usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
+
+
+\usepackage{times,graphicx}
+% \usepackage[a4paper, total={6.7in, 9.7in}]{geometry}
+
+% JobGraph fig
+\usepackage{tikz}
+\usetikzlibrary{arrows,automata,positioning,shapes.geometric}
+
+% trademark symbol
+\usepackage{textcomp}
+
+\usepackage{float}
+
+% code listings
+\usepackage{listings}
+
+\graphicspath{{figs/}}
+
+\newcommand{\TODO}[1]{\textcolor{red}{TODO: #1}}
+\newcommand{\sectionautorefname}{Section}%
+\newcommand{\para}[1]{\vspace{2mm}\noindent\textbf{#1}}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+% there is no built in support or Scala yet, good enough
+\lstset{frame=l,
+  language=Java,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  xleftmargin=5pt,
+%   framexleftmargin=-1pt,
+  columns=flexible,
+  basicstyle={\scriptsize\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{black},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4,
+  %for scala
+  emph={%  
+    object, def, val, zip, window, trigger, evict%
+    },emphstyle={\color{blue}\textbf}%
+}%
+
+
+% \usepackage[
+% % backend=biber
+% % style=alphabetic,
+% % sorting=abbrv
+% ]{biblatex}
+
+% \renewbibmacro{in:}{}
+
+ 
+% \addbibresource{references.bib}
+% \renewcommand{\bibfont}{\small} % or any other  appropriate font command
+
+% url references
+\usepackage[hidelinks]{hyperref}
+
+% in paragraph enums
+\usepackage{paralist}
+
+\usepackage{subfig}
+
+\def\definitionautorefname{Definition}
+\def\sectionautorefname{Section}
+\def\subsectionautorefname{Section}
+\def\subsubsectionautorefname{Section}
+\def\algorithmautorefname{Algorithm}
+\def\figureautorefname{Figure}
+
+\begin{document}
+
+% ****************** TITLE ****************************************
+
+\title{Consistent Distributed Stream Processing Opacified}
+\subtitle{An Analysis of State Management in Apache Flink\textsuperscript{TM}}
+% possible, but not really needed or used for PVLDB:
+%\subtitle{[Extended Abstract]
+%\titlenote{A full version of this paper is available as\textit{Author's Guide to Preparing ACM SIG Proceedings Using \LaTeX$2_\epsilon$\ and BibTeX} at \texttt{www.acm.org/eaddress.htm}}}
+
+% ****************** AUTHORS **************************************
+
+% You need the command \numberofauthors to handle the 'placement
+% and alignment' of the authors beneath the title.
+%
+% For aesthetic reasons, we recommend 'three authors at a time'
+% i.e. three 'name/affiliation blocks' be placed beneath the title.
+%
+% NOTE: You are NOT restricted in how many 'rows' of
+% "name/affiliations" may appear. We just ask that you restrict
+% the number of 'columns' to three.
+%
+% Because of the available 'opening page real-estate'
+% we ask you to refrain from putting more than six authors
+% (two rows with three columns) beneath the article title.
+% More than six makes the first-page appear very cluttered indeed.
+%
+% Use the \alignauthor commands to handle the names
+% and affiliations for an 'aesthetic maximum' of six authors.
+% Add names, affiliations, addresses for
+% the seventh etc. author(s) as the argument for the
+% \additionalauthors command.
+% These 'additional authors' will be output/set for you
+% without further effort on your part as the last section in
+% the body of your article BEFORE References or any Appendices.
+
+\numberofauthors{5} 
+
+\author{
+}
+
+% \alignauthor
+% Ben Trovato\titlenote{Dr.~Trovato insisted his name be first.}\\
+%       \affaddr{Institute for Clarity in Documentation}\\
+%       \affaddr{1932 Wallamaloo Lane}\\
+%       \affaddr{Wallamaloo, New Zealand}\\
+%       \email{trovato@corporation.com}
+% % 2nd. author
+% \alignauthor
+% G.K.M. Tobin\titlenote{The secretary disavows
+% any knowledge of this author's actions.}\\
+%       \affaddr{Institute for Clarity in Documentation}\\
+%       \affaddr{P.O. Box 1212}\\
+%       \affaddr{Dublin, Ohio 43017-6221}\\
+%       \email{webmaster@marysville-ohio.com}
+% % 3rd. author
+% \alignauthor Lars Th{\Large{\sf{\o}}}rv{$\ddot{\mbox{a}}$}ld\titlenote{This author is the
+% one who did all the really hard work.}\\
+%       \affaddr{The Th{\large{\sf{\o}}}rv{$\ddot{\mbox{a}}$}ld Group}\\
+%       \affaddr{1 Th{\large{\sf{\o}}}rv{$\ddot{\mbox{a}}$}ld Circle}\\
+%       \affaddr{Hekla, Iceland}\\
+%       \email{larst@affiliation.org}
+% \and  % use '\and' if you need 'another row' of author names
+% % 4th. author
+% \alignauthor Lawrence P. Leipuner\\
+%       \affaddr{Brookhaven Laboratories}\\
+%       \affaddr{Brookhaven National Lab}\\
+%       \affaddr{P.O. Box 5000}\\
+%       \email{lleipuner@researchlabs.org}
+% % 5th. author
+% \alignauthor Sean Fogarty\\
+%       \affaddr{NASA Ames Research Center}\\
+%       \affaddr{Moffett Field}\\
+%       \affaddr{California 94035}\\
+%       \email{fogartys@amesres.org}
+% }
+
+% There's nothing stopping you putting the seventh, eighth, etc.
+% author on the opening page (as the 'third row') but we ask,
+% for aesthetic reasons that you place these 'additional authors'
+% in the \additional authors block, viz.
+
+% \additionalauthors{Additional authors: John Smith (The Th{\o}rv\"{a}ld Group, {\texttt{jsmith@affiliation.org}}), Julius P.~Kumquat
+% (The \raggedright{Kumquat} Consortium, {\small \texttt{jpkumquat@consortium.net}}), and Ahmet Sacan (Drexel University, {\small \texttt{ahmetdevel@gmail.com}})}
+% \date{30 July 1999}
+
+% Just remember to make sure that the TOTAL number of authors
+% is the number that will appear on the first page PLUS the
+% number that will appear in the \additionalauthors section.
+
+
+\maketitle
+
+\begin{abstract}
+Abstract of Flink State Management
+\end{abstract}
+
+
+\input{intro}
+
+\input{background}
+
+\input{core}
+
+\input{special}
+
+\input{implementation}
+
+\input{evaluation}
+
+\input{related}
+
+\input{acknowledgements}
+
+\input{conclusion}
+
+\balance
+
+\bibliographystyle{abbrv}
+\bibliography{draft}  
+
+
+%APPENDIX is optional.
+% ****************** APPENDIX **************************************
+% Example of an appendix; typically would start on a new page
+%pagebreak
+
+\begin{appendix}
+\end{appendix}
+
+
+\end{document}
