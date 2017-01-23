@@ -31,7 +31,7 @@ To summarize, the contributions of this paper can be listed as follows:
 	\item We tailor asynchronous state snapshotting to the needs of typical distributed dataflow pipelines.
 	\item We encapsulate different processing guarantees and isolation levels for accessing partitioned operator state and output, within the snapshotting protocol itself.
 	\item We provide a complete end-to-end design for stateful processing from the programming model to file system persistence.
-	\item We describe live, large-scale Flink pipeline deployments that operate 24/7 in production and rely heavily on stateful operator logic.
+	\item We describe live, large-scale pipeline production deployments that operate 24/7 in production and rely heavily on stateful processing coupled with runtime metrics and performance insights \paris{we need to think how to present in an intuitive way the king use-case. Gyula is also going to collect metrics and bridge this in the evaluation section}.
 	\item We evaluate the runtime and reconfiguration performance impact of all the variations of our snapshotting mechanism under different workloads and pipeline types.
 \end{itemize}
 

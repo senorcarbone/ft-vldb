@@ -2,3 +2,8 @@
 
 
 \section{Experimental Evaluation}
+
+\paris{To sum everything I already discussed with Gyula. We need to benchmark and collect stats for the following pipeline impact factors: 1) state size (small and large state), 2) alignment (no snapshot - at least once - exactly once), 3) job graph length -> snapshot latency - worse recovery (rollback earlier). Ultimately, we want to show the costs of EtE, Snapshot  and Recovery Latency. 
+We should include at least once cyclic graph as well.
+Optionally, we can benchmark output commit metrics as well using the simple rolling sink (and observe when files are tagged as 'committed' by all sinks). 
+}

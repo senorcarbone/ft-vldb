@@ -2,14 +2,24 @@
 
 \section{Special Cases and Optimisations}
 
+\paris{Not entirely sure whether this chapter is something more than a dumper of anything around the core mechanism. We could also push concepts in chapter 3 and leave here only output commit and HA (if we want to include a brief explanation of that). Stephan's feedback would also be highly appreciated around this section if not everywhere else. }
+
 \subsection{Savepoints and Versioning}
 
-\subsection{At-Least Once Processing}
+\paris{Savepoints and Checkpoints are now the same thing but we can probably highlight here how we can not only reconfigure parallelism but also push patches and use this for pipeline versioning}
+
+\subsection{Snapshots with Relaxed Consistency}
+
+\paris{No aligning -> At least once processing guarantees}
 
 \subsection{Incremental \& Concurrent Snapshots}
 
+\paris{This is still incomplete work. Incremental snapshots are easy with rocksdb sure, but what about the recovery-snapshot latency trade-off. This is the main issue that needs to be discussed and can probably use another complete paper}
+
 \subsection{Queryable State}
+\paris{This is just implementation-specific about how queryable state is implemented.}
 
 \subsection{Output Commit}
 
 \subsection{High Availability \& Reconfiguration}
+\paris{This is just an implementation specific problem. We should mention how we utilized zookeeper and offer some insights about what metadata we store since it is useful for many people actually.}

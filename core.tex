@@ -2,12 +2,20 @@
 
 \section{The Core Mechanism}
 
+\paris{I am going to commit this whole chapter very soon. Still working on the presentation part to make it read well and be concise.}
+
 \subsection{Preliminaries}
 
 \subsection{State Representations}
 
-\subsection{Asynchronous Snapshots}
+\paris{Here we can describe state types and key regions briefly. There is nothing really too novel but it aids the understanding of how everything fits together.}
+
+\subsection{Concurrent Asynchronous Snapshots}
+
+\paris{This is something that can also be pushed to the next section, not sure yet.}
 
 \subsection{Cyclic Dataflow Logging}
 
-\subsection{Selective Rollback Recovery}
+\subsection{Reconfiguration and Rollback}
+
+\paris{This is probably the weekest part of state management. We restart the whole thing whenever we have to reconfigure and this is honestly a bit bad but hey it's simple. (also spark does this for every microbatch so maybe it is not that sad)}
