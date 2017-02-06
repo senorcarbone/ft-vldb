@@ -72,8 +72,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \ifthenelse{\boolean{commentSwitch}}{
-  \newcommand{\asterios}[1]{\textcolor{blue}{Kostas: #1}}
-  \newcommand{\jonas}[1]{\textcolor{darkred}{Stephan: #1}}
+  \newcommand{\kostas}[1]{\textcolor{blue}{Kostas: #1}}
+  \newcommand{\stephan}[1]{\textcolor{darkred}{Stephan: #1}}
   \newcommand{\paris}[1]{\textcolor{purple}{Paris: #1}}
   \newcommand{\gyula}[1]{\textcolor{darkgreen}{Gyula: #1}}
   
@@ -83,14 +83,12 @@
   \newcommand{\NOTE}[1]{\textcolor{blue}{\textbf{NOTE}: #1}}
   \newcommand{\DONEX}[1]{\textcolor{blue}{#1}}
 }{
-  \newcommand{\asterios}[1]{}
-  \newcommand{\jonas}[1]{}
+  \newcommand{\kostas}[1]{}
+  \newcommand{\stephan}[1]{}
   \newcommand{\paris}[1]{}
+  \newcommand{\gyula}[1]{}
   \newcommand{\TODO}[1]{}
-  \newcommand{\TODOP}[1]{}
-  \newcommand{\TODOX}[1]{}
   \newcommand{\NOTE}[1]{}
-  \newcommand{\DONEX}[1]{}
 }
 
 \newcommand{\wip}[1]{\textcolor{red}{WIP: #1}}
