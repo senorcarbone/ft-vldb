@@ -8,7 +8,7 @@
 \vspace{-4mm}
 \end{figure*}
 
-\section{Background}
+\section{Preliminaries}
 
 \subsection{The Apache Flink System}
 
@@ -17,5 +17,8 @@ The Apache Flink system \cite{CUSTOM:web/Flink} is an open-source project that p
 Logical pipeline representations are optimised and mapped to physical graphs of dataflow operators encapsulating the user-defined logic at the client side. Physical graph representations are shipped to Flink's runtime, a continuous dataflow execution environment which deploys and manages their continuous execution as depicted in \autoref{fig:flink-overview}(b). As with most distributed data processing systems, there is a \emph{JobManager}, a master process that holds the metadata of active pipelines and coordinates execution by communicating with worker processes, the TaskManagers. Communication between the the JobManager and TaskManagers respects an asynchronous RPC-based communication protocol, consisting of periodic status updates (heartbeats) to the JobManager and scheduling requests back to the TaskManagers. In contrast to batch-centric job management \cite{zaharia2012discretized,venkataramandrizzle} which prioritizes reconfiguration and coordination, Flink employs a schedule-once, long-running allocation of tasks. However, the system is flexible to trivially reconfigure pipelines to more or less workers and re-allocate application state on-demand. This approach minimizes management overhead while allowing for fast adaptation to hardware or software changes or partial failures that can potentially occur. Finally, pipeline deployments in Flink are highly available, thus, tolerating both master and worker failures via leader election and passive failover in Zookeeper. All underlying mechanisms for state partitioning, snapshotting and maintenance are the main focus and covered throughly in this paper.
 
 
-\subsection{Snapshots and Rollback Recovery}
+\subsection{Distributed Snapshots}
+
+
+
 \paris{It is a good chance here to explain what is exactly-once etc. and link them to snapshot properties. This is probably the only mildy theoretical part but it needs to be so just enough to help non-pro folks to understand the concepts we are covering}

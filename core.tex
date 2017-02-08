@@ -1,21 +1,17 @@
 %!TEX root = main.tex
 
-\section{The Core Mechanism}
+\section{Consistent Pipeline State}
 
-\paris{I am going to commit this whole chapter very soon. Still working on the presentation part to make it read well and be concise.}
-
-\subsection{Preliminaries}
-
-\subsection{State Representations}
+\subsection{State Types and Allocation}
 
 \paris{Here we can describe state types and key regions briefly. There is nothing really too novel but it aids the understanding of how everything fits together.}
 
-\subsection{Concurrent Asynchronous Snapshots}
+\subsection{The Pipelined Snapshotting Algorithm}
 
 \paris{This is something that can also be pushed to the next section, not sure yet.}
 
 \subsection{Cyclic Dataflow Logging}
 
-\subsection{Reconfiguration and Rollback}
+\subsection{Rollback Reconfiguration}
 
-\paris{This is probably the weekest part of state management. We restart the whole thing whenever we have to reconfigure and this is honestly a bit bad but hey it's simple. (also spark does this for every microbatch so maybe it is not that sad)}
+\paris{This is probably the weekest part of state management. We restart the whole thing whenever we have to reconfigure and this is honestly a bit bad but hey it's simple. (also spark does this for every microbatch so maybe it is not that sad)}nai
