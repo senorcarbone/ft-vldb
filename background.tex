@@ -19,6 +19,9 @@ Logical pipeline representations are optimised and mapped to physical graphs of 
 
 \subsection{Distributed Snapshots}
 
+Distributed systems are typically designed in a way that masks away from the user or programmer concerns related to their distributed nature, thus, offering the view of a single entity. For a distributed data computing system like Flink we often have to reason about the state of a pipeline in production at any time during its computation. Knowing the complete state of a computation is essential since we can use it to correctly rollback the full computation to the point in time when that state was captured, a common case when reconfiguration is needed or a partial failure caused a violation of the correct execution of the pipeline. This approach is also known as rollback recovery \cite{elnozahy2002survey} in traditional distributed systems research.
+
+\paris{we should simply explain exactly once processing guarantees, consistency and briefly mention what is the SoA}
 
 
 \paris{It is a good chance here to explain what is exactly-once etc. and link them to snapshot properties. This is probably the only mildy theoretical part but it needs to be so just enough to help non-pro folks to understand the concepts we are covering}
