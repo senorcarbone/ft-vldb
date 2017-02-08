@@ -76,6 +76,7 @@
   \newcommand{\stephan}[1]{\textcolor{darkred}{Stephan: #1}}
   \newcommand{\paris}[1]{\textcolor{purple}{Paris: #1}}
   \newcommand{\gyula}[1]{\textcolor{darkgreen}{Gyula: #1}}
+  \newcommand{\stefan}[1]{\textcolor{brown}{Stefan: #1}}
   
   \newcommand{\TODO}[1]{\textcolor{red}{TODO: #1}}
   \newcommand{\TODOP}[1]{\textcolor{red}{TODO: #1}}
@@ -87,6 +88,7 @@
   \newcommand{\stephan}[1]{}
   \newcommand{\paris}[1]{}
   \newcommand{\gyula}[1]{}
+  \newcommand{\stefan}[1]{}
   \newcommand{\TODO}[1]{}
   \newcommand{\NOTE}[1]{}
 }
@@ -150,11 +152,11 @@
 
 % ****************** TITLE ****************************************
 
-\title{Tailoring State Management to Distributed Dataflows}
+\title{Tailoring State Management in Apache Flink\textsuperscript{\textregistered}}
 
 %synchronous State Management for Parallel Dataflows
 
-\subtitle{Consistent Stateful Stream Processing in Apache Flink\textsuperscript{\textregistered}.}
+\subtitle{Consistent Stateful Stream Processing on Distributed Dataflows}
 % possible, but not really needed or used for PVLDB:
 %\subtitle{[Extended Abstract]
 %\titlenote{A full version of this paper is available as\textit{Author's Guide to Preparing ACM SIG Proceedings Using \LaTeX$2_\epsilon$\ and BibTeX} at \texttt{www.acm.org/eaddress.htm}}}
@@ -254,8 +256,6 @@ At Flink's core, an asynchronous in-band, snapshotting mechanism guarantees the 
 \input{background}
 
 \input{core}
-
-\input{special}
 
 \input{implementation}
 

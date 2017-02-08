@@ -14,4 +14,8 @@
 
 \subsection{Rollback Reconfiguration}
 
-\paris{This is probably the weekest part of state management. We restart the whole thing whenever we have to reconfigure and this is honestly a bit bad but hey it's simple. (also spark does this for every microbatch so maybe it is not that sad)}nai
+\subsection{Savepoints and State Recovery}
+
+\paris{Savepoints and Checkpoints are now the same thing but we can probably highlight here how we can not only reconfigure parallelism but also push patches and use this for pipeline versioning}
+
+\paris{Recovery is probably the weakest part of state management. We restart the whole thing whenever we have to reconfigure and this is honestly a bit bad but hey it's simple. (also spark does this for every microbatch so maybe it is not that sad)}nai

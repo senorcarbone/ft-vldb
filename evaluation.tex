@@ -1,9 +1,10 @@
 %!TEX root = main.tex
 
 
-\section{Experimental Evaluation}
+\section{Large-Scale Deployments}
 
-\paris{To sum everything I already discussed with Gyula. We need to benchmark and collect stats for the following pipeline impact factors: 1) state size (small and large state), 2) alignment (no snapshot - at least once - exactly once), 3) job graph length -> snapshot latency - worse recovery (rollback earlier). Ultimately, we want to show the costs of EtE, Snapshot  and Recovery Latency. 
-We should include at least once cyclic graph as well.
-Optionally, we can benchmark output commit metrics as well using the simple rolling sink (and observe when files are tagged as 'committed' by all sinks). 
+\kostas{We probably do not need a traditional evaluation section but rather some numbers from King, Alibaba etc. taken from really large deployments with terabytes of managed state}
+
+\paris{We can also benchmark and collect stats for the following pipeline impact factors: 1) state size (small and large state), 2) alignment (no snapshot - at least once - exactly once), 3) job graph length -> snapshot latency - worse recovery (rollback earlier). Ultimately, it is nice to show the costs of EtE, Snapshot  and Recovery Latency. 
+We can probably include at least once cyclic graph as well.
 }
