@@ -1,4 +1,4 @@
-%!TEX root = draft.tex
+%!TEX root = main.tex
 
 \begin{figure*}[t!]
 \centering
@@ -11,7 +11,6 @@
 \section{Background}
 
 \subsection{The Apache Flink System}
-\paris{This will be a very brief overview (system picture etc.) explaining the general architecture and usage of the system. Should not expand much since this is a more focused paper on statetul computation.}
 
 The Apache Flink system \cite{CUSTOM:web/Flink} is an open-source project that provides a full software stack for programming, compiling and running distributed continuous data processing pipelines (\autoref{fig:flink-overview}(a)). Pipelines can be written as a series of data-centric transformations expressed in a fluid, functional programming API. At the core of the model there are two basic abstract data types, the \emph{DataSet} and \emph{DataStream} representations which target bounded and unbounded datasets respectively. Computation declared using high-level domain-specific libraries such as the SQL and Machine Learning (ML) packages, in fact, translates into a logical pipeline using these core representations. The Flink programming model allows programmers to declare consistent application state within continuous user-defined transformations through managed data collections of various properties (append-only, mutable, etc.). 
 
