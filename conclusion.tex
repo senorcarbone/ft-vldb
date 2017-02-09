@@ -1,6 +1,7 @@
 %!TEX root = main.tex
 
 \section{Conclusion and Future Work}
+\label{sec:conclusion}
 
 We presented Apache Flink's core mechanisms for managing peristent, large-scale pipelines with large application state in production. Flink is a flexible, reconfigurable distributed system which runs continuous, analytical, data-centric computation offering strong state consistency guarantees. A distinct snapshotting mechanism aquires a global view of the system periodically or upon demand which allows for coarse grained rollback recovery in a asynchronous, transparent and efficient manner. Snapshots allow for fundamentally practical reconfiguration usages, ranging from partial failure recovery to application versioning, debugging and general state management. Managed state in Apache Flink can be trivially declared through special collections that abstract runtime state management concerns from the programmer. We demonstrated Flink's practical impact with large-scale deployment measurements with terabytes of state, continuously updated by transformations triggered by millions of continuous streams of input data.
 

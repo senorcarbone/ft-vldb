@@ -1,10 +1,8 @@
 %!TEX root = main.tex
 
 \section{Introduction}
+\label{sec:intro}
 
-
-
-\paris{this intro serves as a placeholder. Feel free to edit as you like}
 %- What is the problem?
 State management unifies a set of a hard requirements when it comes to systems that do continuous processing over potentially unbounded data sets. Data pipelines written and deployed on such systems run 24/7, processing distributed streams of records while updating user-defined state that often expands outside fixed local memory capacities. Pipelines are defined in a declarative programming model and compiled down to a distributed dataflow graph of operators. Such operators typically have local state accessed by user-defined functions and exchange data over the network.
 
@@ -15,7 +13,7 @@ Major challenges arise when there is need to scale in or out, deal with partial 
 
 These are all significant needs, required today for critical continuous applications that cannot tolerate data or computational loss such as financial data processing. 
 %(also known as \emph{at-least-once} and \emph{exactly-once} processing guarantees)
-\paris{add more examples of such applications here} While several of these important state management issues have been previously researched and applied in production systems, most known approaches fall sort on doing so transparently. For example, micro-batching techniques for reliable continuous processing (e.g. Apache Spark \cite{zaharia2012discretized}) sacrifice programming model transparency by enforcing batch-centric application logic, despite incremental optimisations \cite{venkataramandrizzle} that deal solely with amortizing associated latency costs. Other proprietory continuous processing system solutions \cite{millwheel} on the other hand, rely on heavy transactional per-record processing that in fact push critical complexities outside the system which assume high performance key value stores and fine-tailored hardware and network infrastructure. 
+While several of these important state management issues have been previously researched and applied in production systems, most known approaches fall sort on doing so transparently. For example, micro-batching techniques for reliable continuous processing (e.g. Apache Spark \cite{zaharia2012discretized}) sacrifice programming model transparency by enforcing batch-centric application logic, despite incremental optimisations \cite{venkataramandrizzle} that deal solely with amortizing associated latency costs. Other proprietory continuous processing system solutions \cite{millwheel} on the other hand, rely on heavy transactional per-record processing that in fact push critical complexities outside the system which assume high performance key value stores and fine-tailored hardware and network infrastructure. 
 
 %Why hasn't it been solved before? (Or, what's wrong with previous proposed  solutions? How does mine differ?)
 
@@ -25,15 +23,14 @@ The core of our approach in Apache Flink builds on \emph{distributed snapshots},
 
 We present a complete, continuous state management solution that is currently implemented on Apache Flink, a widely adopted data stream processor. Our snapshotting mechanism is coordinated, similarly to the classical Chandy \& Lamport's protocol \cite{chandy1985distributed}. However, it further exploits ordering guarantees and asynchrony in a fine-tailored manner to superimpose the acquisition of consistent global state savepoints without heavily impacting throughput. More importantly, savepoints are lightweight, partially asynchronous and contain nothing more than compacted operator state with the exception of cyclic dataflow graphs where the partial inclusion of records in-transit is unavoidable. In situations where relaxed processing guarantees are acceptable (i.e. at-least once processing guarantees) a totally asynchronous version of the protocol can be selected on-demand. Moreover, state and output that can be accessed from outside the system (e.g. querable operators, pipeline output) is provided under user-defined isolation levels (read committed or uncommitted) in order to satisfy the required trade off between consistency and latency.
 
-To summarize, the contributions of this paper can be listed as follows:
+To summarize, we make the following contributions:
 
 \begin{itemize}
 	\item We tailor asynchronous state snapshotting to the needs of typical distributed dataflow pipelines.
 	\item We encapsulate different processing guarantees and isolation levels for accessing partitioned operator state and output, within the snapshotting protocol itself.
-	\item We provide a complete end-to-end design for stateful processing from the programming model to file system persistence.
-	\item We describe live, large-scale pipeline production deployments that operate 24/7 in production and rely heavily on stateful processing coupled with runtime metrics and performance insights \paris{we need to think how to present in an intuitive way the king use-case. Gyula is also going to collect metrics and bridge this in the evaluation section}.
-	\item We evaluate the runtime and reconfiguration performance impact of all the variations of our snapshotting mechanism under different workloads and pipeline types.
+	\item We provide a complete end-to-end design for stateful processing from programming model to file persistence
+	\item We describe live, large-scale pipeline production deployments that operate 24/7 in production and rely heavily on stateful processing coupled with runtime metrics and performance insights.
+	\item We demonstrate usages and large-deployments of Flink having different workloads and pipeline types.
 \end{itemize}
 
-\paris{this is just a placeholder}
-The rest of the paper is organized as follows: Section 2 gives an overview of the Apache Flink stack and basic consistency guarantees considered in distributed dataflow application state. Section 3 describes the core state management mechanism, state representations, as well as variations of the algorithm for cyclic graphs and relaxed consistency. Section 4 summarizes implementation concerns and possible usages of the system's feature, lifting traditional database and system concerns under a common framework. Then, Section 5 describes how the system integrates with different file systems and database. Finally, Section 6 offers a detailed evaluation study covering performance impact metrics under different pipeline types and consistency or isolation levels followed by related work in Section 7, acknowledgments in Section 8 and our conclusions summarized in Section 9.
+The rest of the paper is organized as follows: \autoref{sec:preliminaries} gives an overview of the Apache Flink stack and the basic principles behind distributed snapshots and associated consistency guarantees. In \autoref{sec:core} we describe the core state management mechanisms of Flink, namely the state representations, the snapshotting protocol as well as variations for cyclic graphs and associated practical usages. We summarize implementation concerns such as file management, concurrent snapshots, the ability to query uncommitted state as well as end-to-end guarantees coordinated between the existing snapshotting mechanism and file writes. Finally, \autoref{sec:evaluation} covers impact metrics under different pipeline types and consistency or isolation levels captured from existing large-scale deployments followed by related work in \autoref{sec:related}, acknowledgments in \autoref{sec:acknowledgements} and our conclusions coupled with future work summarized in \autoref{sec:conclusion}.

@@ -2,25 +2,20 @@
 
 
 \section{Implementation and Usage}
+\label{sec:implementation}
 
+\subsection{Concurrent Snapshots}
 
-\subsection{Incremental \& Concurrent Snapshots}
+\subsection{The File System Backend}
+ 
+\paris{Several new features are built on rocksdb (snapshots, compaction, incremental snapshots etc). We do not need to say many details, other than how everything integrates together I think. This is really up to discussion}
 
-\paris{This is still incomplete work. Incremental snapshots are easy with rocksdb sure, but what about the recovery-snapshot latency trade-off. This is the main issue that needs to be discussed and can probably use another complete paper}
+\subsection{End-to-End Exactly Once Guarantees}
 
 \subsection{Queryable State}
 \paris{This is just implementation-specific about how queryable state is implemented.}
 
+
 \subsection{High Availability \& Reconfiguration}
 \paris{This is just an implementation specific problem. We should mention how we utilized zookeeper and offer some insights about what metadata we store since it is useful for many people actually.}
 
-
-
-\subsection{Durable Backends}
- 
-\paris{Several new features are built on rocksdb (snapshots, compaction, incremental snapshots etc). We do not need to say many details, other than how everything integrates together I think. This is really up to discussion}
-
-
-
-
-\subsection{Output Commit}
