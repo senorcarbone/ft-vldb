@@ -1,5 +1,13 @@
 %!TEX root = main.tex
 
+\begin{figure*}[t!]
+\centering
+\includegraphics[width=\textwidth]{figures/snapshots-overview.pdf}
+\caption{Pipelining Distributed Snapshots on Epochs with Markers.} 
+\label{fig:snapshots-overview}
+\vspace{-4mm}
+\end{figure*}
+
 \section{Core Concepts and Mechanisms}
 \label{sec:core}
 
@@ -21,7 +29,7 @@ The mapping of a logical dataflow graph to $G$, the physical, distributed execut
 
 \noindent $K^* = \{ h(k)\text{ \texttt{mod} }\pi\text{-max}\text{ }|\text{ }k \in \mathcal{K}, \pi\text{-max} \in \mathbb{N^+}, h: \mathcal{K} \rightarrow \mathbb{N^+} \}$
 
-Upon deployment with parallelism $\pi$ key groups are directly allocated per task $t^i$ from $\lceil i \times \frac{\pi\text{-max}}{\pi} \rceil$ to $\lfloor (i+1) \times \frac{\pi\text{-max}}{\pi} \rfloor$. We found that this is a trivial way to pre-partition and reallocate state in a pipeline, typically using a non-cryptographic hash function such as murmur hash. As shown in \autoref{sec:implementation}, state snapshots are materialized and indexed per allocated key group at the backend which allows for trivial reconfiguration. \paris{@stefan please elaborate on operator state rescaling.}
+Upon deployment with parallelism $\pi$ key groups are directly allocated per task $t^i$ from $\lceil i \times \frac{\pi\text{-max}}{\pi} \rceil$ to $\lfloor (i+1) \times \frac{\pi\text{-max}}{\pi} \rfloor$. We found that this is a trivial way to pre-partition and reallocate state in a pipeline, typically using a non-cryptographic hash function such as murmur hash. As shown in \autoref{sec:implementation}, state snapshots are materialized and indexed per allocated key group at the backend which allows for trivial reconfiguration. \paris{@stefan I need some input regarding operator state rescaling.}
 
 \subsection{The Pipelined Snapshotting Protocol}
 
@@ -31,17 +39,19 @@ Flink's snapshotting protocol provides a uniform way to capture the complete sta
 
 A continuous stream execution is conceptually divided into logical periods that ``cut'' a distributed data stream into consecutive finite sets of records \ref{fig:abs-general}, which we call \emph{epochs}. An \emph{epoch} can be defined on-the-fly, periodically by the system or on-demand by the user and is decoupled from any application logic (e.g., windowing constrains). A snapshot of the computation at \emph{epoch} $n$ points to a copy of the internal state of each task $t \in \mathcal{T}$ after the system fully ingests  every input record from the beginning of the computation (\emph{epoch} 0) including records residing within \emph{epoch} $n$. In case of a failure during or before  snapshot of \emph{epoch} $n$ is acquired we can simply revert the global state of the distributed dataflow graph to \emph{epoch} $n-1$. A discrete approach to snapshotting would be to let the distributed dataflow fully ingest \emph{epoch} $n$ independently, store the internal state of each task $t \in \mathcal{T}$ and proceed with \emph{epoch} $n+1$ (similarly to micro-batching \cite{zaharia2012discretized}). However, this approach generally leads to high latency and underutilization costs related to the coordination of a discrete execution which cannot be amortized trivially \cite{venkataramandrizzle}. Furthermore, other protocols either disrupt normal execution \cite{murray2013naiad,jacques2016consistent} or are incapable of supporting weakly connected graphs \cite{chandy1985distributed} the norm in distributed dataflow processing.
 
-Instead, Flink's snapshotting protocol pipelines progressively the partial acquisition of tasks states to eventually acquire a complete snapshot, respecting \emph{epochs}, while running concurrently alongside normal operation. Special markers are injected in each data stream partition at the dataflow sources, coordinated by the runtime and get disseminated throughout the dataflow graph. Markers signal distributed tasks of new epochs and thus aid to establish the appropriate moment to snapshot each local state and proceed with further processing promptly. Tasks with multiple inputs execute an \emph{alignment} phase upon which they prioritize inputs from pending \emph{epochs}. Alignment is decentralized and eliminates the need to forcefully consume an epoch or log records in transit in the case of acyclic graphs. As we explain in more detail further, cyclic graphs require partial channel log0ging only limited to each dataflow cycle. The snapshotting protocol is coordinated centrally by the \emph{JobManager} and each invocation eventually completes or gets aborted (e.g., when a failure occurs) but the dataflow computation can always progress without interruptions.
+Instead, Flink's snapshotting protocol pipelines progressively the partial acquisition of tasks states to eventually acquire a complete snapshot, respecting \emph{epochs}, while running concurrently alongside normal operation. Special markers are injected in each data stream partition at the dataflow sources, coordinated by the runtime and get disseminated throughout the dataflow graph. Markers signal distributed tasks of new epochs and thus aid to establish the appropriate moment to snapshot each local state and proceed with further processing promptly. Tasks with multiple inputs execute an \emph{alignment} phase upon which they prioritize inputs from pending \emph{epochs}. Alignment is decentralized and eliminates the need to forcefully consume an epoch or log records in transit in the case of acyclic graphs. As we explain in more detail further, cyclic graphs require partial channel logging only limited to each dataflow cycle. The snapshotting protocol is coordinated centrally by the \emph{JobManager} and each invocation eventually completes or gets aborted (e.g., when a failure occurs) but the dataflow computation can always progress without interruptions.
 
 \subsubsection{Main Assumptions}
 
-In our approach, stages are emulated in a continu- ous dataflow execution by special barrier markers in- jected in the input data streams periodically that are pushed throughout the whole execution graph down to the sinks. Global snapshots are incrementally con- structed as each task receives the barriers indicating ex- ecution stages. We further make the following assump- tions for our algorithm:
+The protocol assumes a fail-recovery model where a partial process failure can be masked by redeployment and recovery of operational states.
+We make the following assumptions for our algorithm:
+\TODOX{revisit this part}
 
-Network channels are quasi-reliable, respect a FIFO delivery order and can be blocked and unblocked. When a channel is blocked all messages are buffered but not delivered until it gets unblocked.
-
-• Tasks can trigger operations on their channel com- ponents such as block, unblock and send messages.Broadcasting messages is also supported on all out- put channels.
-
-• Messages injected in source tasks (i.e. stage barri- ers) are resolved into a “Nil” input channel.
+\begin{itemize}
+	\item Data streams are durably logged and indexed by an external system such as Apache Kafka \cite{kreps2011kafka}. That means that we can trivially replay input from a specific logical time by simply knowing an offset per stream partition.
+	\item Network channels are quasi-reliable, respect a FIFO delivery order and can be blocked and unblocked. When a channel is blocked all messages are buffered (and possibly spilled to disk) but not delivered until it gets unblocked.
+	\item Tasks can trigger operations on their channel components such as block, unblock and send messages.Broadcasting messages is also supported on all output channels.
+\end{itemize}
 
 \subsubsection{Directed Acyclic Graphs}
 
