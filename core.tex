@@ -3,7 +3,7 @@
 \begin{figure*}[t!]
 \centering
 \includegraphics[width=\textwidth]{figures/snapshots-overview.pdf}
-\caption{Pipelining Distributed Snapshots on Epochs with Markers.} 
+\caption{An Example of the Pipelined Snapshotting Protocol.} 
 \label{fig:snapshots-overview}
 \vspace{-4mm}
 \end{figure*}
@@ -44,15 +44,52 @@ Instead, Flink's snapshotting protocol pipelines progressively the partial acqui
 \subsubsection{Main Assumptions}
 
 The protocol assumes a fail-recovery, deterministic process model \cite{elnozahy2002survey} where a partial process failure can be masked by redeployment and restoration of prior operational states. In detail, our protocol builds on the following assumptions:
-\TODOX{revisit this part}
 
 \begin{itemize}
 	\item Input data streams are durably logged and indexed by an external logging system such as Apache Kafka \cite{kreps2011kafka}. That means that dataflow sources can trivially re-consume input from a specific logical time by requesting an offset per stream partition. 
 	\item Directional data channels between tasks are quasi-reliable, respect a FIFO delivery order and can be blocked or unblocked. When a channel is blocked in-transit messages are internally buffered (and possibly spilled to disk) and can be delivered on that end once it unblocks.
-	\item Tasks can trigger blocking or unblocking operations on their input data channels and send messages through their output channels. Broadcasting on output channels is also supported.
+	\item Tasks can trigger blocking or unblocking operations on their input data channels and send messages through their output channels.
 \end{itemize}
 
 \subsubsection{Directed Acyclic Graphs}
+
+\begin{algorithm}
+$inputs$ $\leftarrow$ configured\_inputs\;
+$outputs$ $\leftarrow$ configured\_outputs\;
+$blocked \leftarrow \emptyset$ \;
+% $operator$ $\leftarrow$ dataflow\_operator\;
+
+\Hdl{$\langle marker \rangle$ from $in \in inputs$}{
+\If{$in \neq Nil$}{
+ $blocked \leftarrow blocked \cup in$\;
+ $in$.block()\;
+}
+\If{$blocked = inputs$}{
+\ForEach{$out \in outputs$}{
+$out$.send($\langle marker \rangle$)\;
+}
+triggerSnapshot()\;
+\ForEach {$in \in inputs$}{
+$in$.unblock()\;
+}
+$blocked \leftarrow \emptyset$ \;
+}
+}
+\caption{Marker Handling and Alignment}
+\label{alg:snapdag}
+\end{algorithm}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth / 2]{figures/snapshots-highlights.pdf}
+\caption{Alignment and Snapshotting Highlights.} 
+\label{fig:snapshots-highlights}
+\vspace{-4mm}
+\end{figure}
+
+Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets initiated at the source tasks of the dataflow by the \texttt{TaskManager}, however, for simplicity we assume here that the logic gets initiated upon receiving a special marker event in each and every task (sources would ``receive'' that through a $Nil$ channel). \autoref{alg:snapdag} summarizes the snapshot alignment and pipelining protocol that executes when a marker is received. Mind that this runs in the same low level, record handling thread that also invokes user-defined operators (i.e., records and markers are handled sequentially by the same thread). 
+
+\para{Alignment:} \autoref{fig:snapshots-highlights} vizualizes the steps prior to snapshotting in more detail. When a task receives a snapshot marker on one of its inputs it blocks that channel since all computation within the current epoch has to finish before continuing further (\autoref{fig:snapshots-highlights}(a)). As mentioned before, the blocking operation might result into spilling of in-transit records within that channel to disk, if allocated memory for network buffers reaches its limit. Once markers have been received in all inputs (\autoref{fig:snapshots-highlights}(b)) the task can proceed further with snapshotting while also notifying further downstream tasks. In the same atomic operation markers are broadcasted further and local snapshotting is triggered concurrently(\autoref{fig:snapshots-highlights}(c)). Mind that depending on the backend, snapshots can be triggered and took over concurrently, thus, this operation can have zero impact to the overall throughput. Once local snapshotting is initiated all input channels are unblocked and the computation continues as normal (\autoref{fig:snapshots-highlights}(d)).
 
 \subsubsection{Dealing with Cycles}
 

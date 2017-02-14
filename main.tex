@@ -35,7 +35,7 @@
 \usepackage{enumitem}
 \usepackage{listings}      % source code
 \usepackage{algpseudocode}
-\usepackage{algorithm}% http://ctan.org/pkg/algorithms
+% \usepackage{algorithm}% http://ctan.org/pkg/algorithms
 \usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
 \usepackage{tikz}
 \usepackage{array}
@@ -45,9 +45,29 @@
 \usepackage{subcaption}
 \usepackage{placeins}
 
+% \usepackage[vlined, ruled, boxed]{algorithm2e}
+\usepackage[vlined,ruled]{algorithm2e}
+\usepackage{xcolor}
 
-\graphicspath{{figs/}}
 
+
+
+%% Algorithm definitions
+
+%%% optional fonts and color configuration
+\SetAlFnt{\sffamily}
+\renewcommand\ArgSty{\normalfont\sffamily}
+\renewcommand\KwSty[1]{\textnormal{\textbf{\sffamily#1}}\unskip}
+\SetAlCapFnt{\normalfont\sffamily\large}
+\renewcommand\AlCapNameFnt{\sffamily\large}
+
+\SetKwProg{Fn}{Fun}{}{}
+\SetKwProg{Hdl}{Upon}{}{}
+
+%%
+
+
+% \graphicspath{{figs/}}
 \newcommand{\para}[1]{\vspace{2mm}\noindent\textbf{#1}}
 
 \definecolor{dkgreen}{rgb}{0,0.6,0}
