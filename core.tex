@@ -93,31 +93,33 @@ Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets i
 
 \subsubsection{Dealing with Cycles}
 
-% \begin{algorithm}
-% $inputs$ $\leftarrow$ configured\_inputs\;
-% $outputs$ $\leftarrow$ configured\_outputs\;
-% $blocked \leftarrow \emptyset$ \;
-% % $operator$ $\leftarrow$ dataflow\_operator\;
+\begin{algorithm}
+$outputs$ $\leftarrow$ configured\_outputs\;
+$isLogging \leftarrow false$ \;
+$log \leftarrow \emptyset$ \;
 
-% \Hdl{$\langle marker \rangle$ from $in \in inputs$}{
-% \If{$in \neq Nil$}{
-%  $blocked \leftarrow blocked \cup in$\;
-%  $in$.block()\;
-% }
-% \If{$blocked = inputs$}{
-% \ForEach{$out \in outputs$}{
-% $out$.send($\langle marker \rangle$)\;
-% }
-% triggerSnapshot()\;
-% \ForEach {$in \in inputs$}{
-% $in$.unblock()\;
-% }
-% $blocked \leftarrow \emptyset$ \;
-% }
-% }
-% \caption{Marker Handling and Alignment}
-% \label{alg:snapdag}
-% \end{algorithm}
+\Hdl{$\langle marker \rangle$}{
+\eIf{$isLogging$}{
+triggerSnapshot(log) \;
+$log \leftarrow \emptyset$ \;
+}{
+$isLogging \leftarrow true$ \;
+\ForEach{$out \in outputs$}{
+$out$.send($langle marker \rangle$)\;
+}
+}
+}
+\Hdl{$record$}{
+\If{$isLogging$}{
+ $log \leftarrow log \cup record$\;
+}
+\ForEach{$out \in outputs$}{
+$out$.send($record$)\;
+}
+}
+\caption{Iteration Ingress Task Protocol}
+\label{alg:snapdag}
+\end{algorithm}
 
 
 
