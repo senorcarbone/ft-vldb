@@ -87,11 +87,39 @@ $blocked \leftarrow \emptyset$ \;
 \vspace{-4mm}
 \end{figure}
 
-Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets initiated at the source tasks of the dataflow by the \texttt{TaskManager}, however, for simplicity we assume here that the logic gets initiated upon receiving a special marker event in each and every task (sources would ``receive'' that through a $Nil$ channel). \autoref{alg:snapdag} summarizes the snapshot alignment and pipelining protocol that executes when a marker is received. Mind that this runs in the same low level, record handling thread that also invokes user-defined operators (i.e., records and markers are handled sequentially by the same thread). 
+Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets initiated at the source tasks of the dataflow by the \texttt{TaskManager}, however, for simplicity we assume here that the logic gets initiated upon receiving a special marker event in each and every task (sources would ``receive'' that first through a $Nil$ channel). \autoref{alg:snapdag} summarizes the snapshot alignment and pipelining protocol that executes when a marker is received. Mind that this runs in the same low level, record handling thread that also invokes user-defined operators (i.e., records and markers are handled sequentially by the same thread). 
 
-\para{Alignment:} \autoref{fig:snapshots-highlights} vizualizes the steps prior to snapshotting in more detail. When a task receives a snapshot marker on one of its inputs it blocks that channel since all computation within the current epoch has to finish before continuing further (\autoref{fig:snapshots-highlights}(a)). As mentioned before, the blocking operation might result into spilling of in-transit records within that channel to disk, if allocated memory for network buffers reaches its limit. Once markers have been received in all inputs (\autoref{fig:snapshots-highlights}(b)) the task can proceed further with snapshotting while also notifying further downstream tasks. In the same atomic operation markers are broadcasted further and local snapshotting is triggered concurrently(\autoref{fig:snapshots-highlights}(c)). Mind that depending on the backend, snapshots can be triggered and be executed concurrently by another thread, thus, this operation can have zero impact to the overall throughput. Once local snapshotting is initiated all input channels are unblocked and the computation continues as normal (\autoref{fig:snapshots-highlights}(d)).
+\para{Alignment:} \autoref{fig:snapshots-highlights} vizualizes the steps prior to snapshotting in more detail. When a task receives a snapshot marker on one of its inputs it blocks that channel since all computation within the current epoch has to finish before continuing further (\autoref{fig:snapshots-highlights}(a)). As mentioned before, the blocking operation might result into spilling of in-transit records within that channel to disk, if allocated memory for network buffers reaches its limit. Once markers have been received in all inputs (\autoref{fig:snapshots-highlights}(b)) the task can proceed with snapshotting while also notifying downstream tasks. In the same atomic operation markers are broadcasted further and local snapshotting is triggered concurrently(\autoref{fig:snapshots-highlights}(c)). Depending on the backend support, snapshots can be triggered and be executed asynchronously by another thread, thus, inducing zero impact to the overall throughput. Once local snapshotting is initiated all input channels are unblocked and the computation continues as normal (\autoref{fig:snapshots-highlights}(d)).
 
 \subsubsection{Dealing with Cycles}
+
+% \begin{algorithm}
+% $inputs$ $\leftarrow$ configured\_inputs\;
+% $outputs$ $\leftarrow$ configured\_outputs\;
+% $blocked \leftarrow \emptyset$ \;
+% % $operator$ $\leftarrow$ dataflow\_operator\;
+
+% \Hdl{$\langle marker \rangle$ from $in \in inputs$}{
+% \If{$in \neq Nil$}{
+%  $blocked \leftarrow blocked \cup in$\;
+%  $in$.block()\;
+% }
+% \If{$blocked = inputs$}{
+% \ForEach{$out \in outputs$}{
+% $out$.send($\langle marker \rangle$)\;
+% }
+% triggerSnapshot()\;
+% \ForEach {$in \in inputs$}{
+% $in$.unblock()\;
+% }
+% $blocked \leftarrow \emptyset$ \;
+% }
+% }
+% \caption{Marker Handling and Alignment}
+% \label{alg:snapdag}
+% \end{algorithm}
+
+
 
 \subsection{Savepoints and Rollback}
 
