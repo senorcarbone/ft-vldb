@@ -32,7 +32,7 @@ The mapping of a logical dataflow graph to $G$, the physical, distributed execut
 Upon deployment with parallelism $\pi$ key groups are directly allocated per task $t^i$ from $\lceil i \times \frac{\pi\text{-max}}{\pi} \rceil$ to $\lfloor (i+1) \times \frac{\pi\text{-max}}{\pi} \rfloor$. We found that this is a trivial way to pre-partition and reallocate state in a pipeline, typically using a non-cryptographic hash function such as murmur hash. As shown in \autoref{sec:implementation}, state snapshots are materialized and indexed per allocated key group at the backend which allows for trivial reconfiguration. \paris{@stefan I need some input regarding operator state rescaling.}
 
 \subsection{The Pipelined Snapshotting Protocol}
-
+\label{sec:snapshots}
 Flink's snapshotting protocol provides a uniform way to capture the complete state of a pipeline and roll it back whenever that is required. We will first explain its intuition followed by a more formal definition of the assumptions and description of the protocol for directed acyclic and cyclic graphs respectively.
 
 \subsubsection{Protocol Intuition}
@@ -139,7 +139,12 @@ As described in detail in \autoref{alg:snapcycle} and also visualized in \autore
 
 \subsection{Savepoints and Rollback}
 
-\paris{Savepoints and Checkpoints are now the same thing but we can probably highlight here how we can not only reconfigure parallelism but also push patches and use this for pipeline versioning}
+Distributed snapshots, described previously in \ref{sec:snapshots} form the basis for a variety of operations using the Apache Flink system. A snapshot contains all fundamental metadata required to retrieve the complete pipeline state from an associated durable storage backend such as references and indexes to task state partitions and upstream logs (in case of cyclic graphs). Periodic snapshots are automatically triggered by Flink's runtime as a form of per-job ``checkpoint'' for the purposes of consistent fail recovery whenever partial failures occur. However, the usages of snapshots go beyond fault tolerance needs. For a system that is widely deployed in a cloud infrastructure, having the ability to trivially scale resources in or out and lease containers is nowadays a necessity. In principle, failover and re-scaling are two operations that share the same underlying need of adaptive and consistent reconfiguration support \cite{castro2013integrating}. In this section we describe in more detail the operational benefits that distributed snapshots make feasible, as well as the rollback reconfiguration schemes that are currently supported.
+
+\subsubsection{Savepoints and Usages}
+Flink's snapshots offer a lightweight, yet complete ``materialized view'' of a continuous pipeline which can be used in arbitrary ways to load, re-partition and therefore re-deploy otherwise complicated states right out from distributed storage. Snapshots are, in fact, also exposed to the user or operations engineer in the manageable and flexible form of \emph{savepoints}. A \emph{savepoint} is an externally stored snapshot (i.e., the metadata pointing to pipeline state) that can be managed by users for various custom operational needs. For example, when a new version of the system is released it is recommended to trigger a savepoint for each active pipeline, upgrade the system, and then restore all pending computations at the epoch that they were left of. Other common usages of savepoints are to update application logic (e.g., software patches) of already running jobs by replacing operators accessing the same snapshotted state or adding new state entries instead. Finally, Flink also allows periodic snapshots to be externalized in the form of savepoints on configured directories for cases where an operations expert, for example, prefers to do manual bookeeping of pipeline states and perhaps keep a logged history of the overall computation.
+
+\subsubsection{Rollback Reconfiguration}
 
 \paris{Recovery is probably the weakest part of state management. We restart the whole thing whenever we have to reconfigure and this is honestly a bit bad but hey it's simple. (also spark does this for every microbatch so maybe it is not that sad)}
 
