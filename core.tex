@@ -75,7 +75,7 @@ $in$.unblock()\;
 $blocked \leftarrow \emptyset$ \;
 }
 }
-\caption{Marker Handling and Alignment}
+\caption{Snapshot Alignment}
 \label{alg:snapdag}
 \end{algorithm}
 
@@ -117,12 +117,12 @@ $out$.send($\langle marker \rangle$)\;
 $out$.send($record$)\;
 }
 }
-\caption{\texttt{IterationSource} Snapshotting Protocol}
+\caption{Snapshotting in Cycles}
 \label{alg:snapcycle}
 \end{algorithm}
 
 
-Dataflow graphs in Flink can also support cycles. Cycles are currently defined explicitly through Flink's programming API as asynchronous iterations, though structured iterations (e.g., on stream windows) are also considered and can be supported in the future. Snapshotting within cycles in dataflow graphs are being handled as a special case and implemented by specific tasks which we call Iteration Sources. Each dataflow cycle is orchestrated through two implicit tasks: an \texttt{IterationSource} and \texttt{IterationSink}. These two tasks give the impression of regular dataflow sources and sinks, however, they are collocated to share an in-memory buffer and thus implement the feedback logic (and cyclic snapshotting) without being exposed to the developer.
+Dataflow graphs in Flink can also support cycles. Cycles are currently defined explicitly through Flink's programming API as asynchronous iterations, though structured iterations (e.g., on stream windows) are also considered and can be supported in the future. Snapshotting within cycles in dataflow graphs are being handled as a special case and implemented by specific tasks which we call Iteration Sources. Each dataflow cycle is orchestrated through two implicit tasks: an \texttt{IterationHead} and \texttt{IterationTail}. These two tasks types give the impression of regular dataflow \emph{source} and \emph{sink} respectively, however, they are collocated to share an in-memory buffer and thus implement the feedback logic (and cyclic snapshotting) without being exposed to the developer.
 
 \begin{figure}[t]
 \centering
@@ -132,9 +132,9 @@ Dataflow graphs in Flink can also support cycles. Cycles are currently defined e
 \vspace{-4mm}
 \end{figure}
 
-The default stream alignment logic presented (\autoref{alg:snapdag}) would result into an incomplete distributed snapshot if it would be applied \emph{apriori} on cyclic graphs. That is due to the fact that records belonging to prior epochs could still remain indefinitely in-transit within a cycle even after a snapshot has been taken over. Thus, it is of high importance to include these records in the snapshot (or their side effects) in order to get a complete picture of the correct distributed execution \cite{chandy1985distributed,elnozahy2002survey}. Alternative approaches to this problem consider a ``flushing'' phase which enforces the inclusion of all the in-transit records to the internal state of each operator \cite{jacques2016consistent}, however, we argue that this is only relevant to the state of a cycle. Thus, we execute a similar special logging protocol that runs transparently and solely within the \texttt{IterationSource} instances of each cycle.
+The default stream alignment logic presented (\autoref{alg:snapdag}) would result into an incomplete distributed snapshot if it would be applied \emph{apriori} on cyclic graphs. That is due to the fact that records belonging to prior epochs could still remain indefinitely in-transit within a cycle even after a snapshot has been taken over. Thus, it is of high importance to include these records in the snapshot (or their side effects) in order to get a complete picture of the correct distributed execution \cite{chandy1985distributed,elnozahy2002survey}. Alternative approaches to this problem consider a ``flushing'' phase which enforces the inclusion of all the in-transit records to the internal state of each operator \cite{jacques2016consistent}, however, we argue that this is only relevant to the state of a cycle. Thus, we execute a similar special logging protocol that runs transparently and solely within the \texttt{IterationHead} instances of each cycle.
 
-As described in detail in \autoref{alg:snapcycle} and also visualized in \autoref{fig:cycle-highlights}, \texttt{IterationSource} tasks receive a special marker from the runtime signifying each epoch, same as the sources of the dataflow graph. At that instance, they disseminate markers further within a cycle and start logging in their own registered managed state all in-transit events that exist within a cycle in that respective partition (\autoref{fig:cycle-highlights (a)}). Once the marker of the snapshot is received back through their respective collocated \texttt{IterationSink} (\autoref{fig:cycle-highlights (c)}) they trigger a snapshot of that log containing a complete upstream log of all records in-transit that belong to that epoch (\autoref{fig:cycle-highlights (d)}). It is important to note that the default alignment protocol that runs in the rest of the tasks within a cycle (\autoref{fig:cycle-highlights (b)}) ensures that no records belonging to subsequent epochs will transit prior to the marker and thus the complete state of a cycle is logged consistently. This special logic also restricts channel logging to cycles and does not enforce anything other than task states to be included in the snapshot for the rest of the dataflow graph (unlike Chandy and Lamport's \cite{chandy1985distributed} algorithm or state-of-the-art protocols that focus on weakly connected dataflow graphs \cite{elnozahy2002survey,jacques2016consistent,murray2013naiad}).
+As described in detail in \autoref{alg:snapcycle} and also visualized in \autoref{fig:cycle-highlights}, \texttt{IterationHead} tasks receive a special marker from the runtime signifying each epoch, same as the sources of the dataflow graph. At that instance, they disseminate markers further within a cycle and start logging in their own registered managed state all in-transit events that exist within a cycle in that respective partition (\autoref{fig:cycle-highlights (a)}). Once the marker of the snapshot is received back through their respective collocated \texttt{IterationTail} (\autoref{fig:cycle-highlights (c)}) they trigger a snapshot of that log containing a complete upstream log of all records in-transit that belong to that epoch (\autoref{fig:cycle-highlights (d)}). It is important to note that the default alignment protocol that runs in the rest of the tasks within a cycle (\autoref{fig:cycle-highlights (b)}) ensures that no records belonging to subsequent epochs will transit prior to the marker and thus the complete state of a cycle is logged consistently. This special logic also restricts channel logging to cycles and does not enforce anything other than task states to be included in the snapshot for the rest of the dataflow graph (unlike Chandy and Lamport's \cite{chandy1985distributed} algorithm or state-of-the-art protocols that focus on weakly connected dataflow graphs \cite{elnozahy2002survey,jacques2016consistent,murray2013naiad}).
 
 
 \subsection{Savepoints and Rollback}
@@ -142,3 +142,6 @@ As described in detail in \autoref{alg:snapcycle} and also visualized in \autore
 \paris{Savepoints and Checkpoints are now the same thing but we can probably highlight here how we can not only reconfigure parallelism but also push patches and use this for pipeline versioning}
 
 \paris{Recovery is probably the weakest part of state management. We restart the whole thing whenever we have to reconfigure and this is honestly a bit bad but hey it's simple. (also spark does this for every microbatch so maybe it is not that sad)}
+
+
+
