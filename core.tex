@@ -89,9 +89,9 @@ $blocked \leftarrow \emptyset$ \;
 
 Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets initiated at the source tasks of the dataflow by the \texttt{TaskManager}, however, for simplicity we assume here that the logic gets initiated upon receiving a special marker event in each and every task (sources would ``receive'' that first through a $Nil$ channel). \autoref{alg:snapdag} summarizes the snapshot alignment and pipelining protocol that executes when a marker is received. Mind that this runs in the same low level, record handling thread that also invokes user-defined operators (i.e., records and markers are handled sequentially by the same thread). 
 
-\para{Alignment:} \autoref{fig:snapshots-highlights} vizualizes the steps prior to and during snapshotting in more detail. When a task receives a snapshot marker on one of its inputs it blocks that channel since all computation within the current epoch has to finish before continuing further (\autoref{fig:snapshots-highlights}(a)). As mentioned before, the blocking operation might result into spilling of in-transit records within that channel to disk, if allocated memory for network buffers reaches its limit. Once markers have been received in all inputs (\autoref{fig:snapshots-highlights}(b)) the task can proceed with snapshotting while also notifying downstream tasks. In the same atomic operation markers are broadcasted further and local snapshotting is triggered concurrently(\autoref{fig:snapshots-highlights}(c)). Depending on the backend support, snapshots can be triggered and be executed asynchronously by another thread, thus, inducing zero impact to the overall throughput. Once local snapshotting is initiated all input channels are unblocked and the computation continues as normal (\autoref{fig:snapshots-highlights}(d)).
+\para{Alignment:} \autoref{fig:snapshots-highlights} vizualizes the steps prior to and during snapshotting in more detail. When a task receives a snapshot marker on one of its inputs it blocks that channel since all computation associated with the current epoch has to finish before continuing further (\autoref{fig:snapshots-highlights}(a)). The blocking operation might result into spilling of in-transit records within that channel to disk, if allocated memory for network buffers reaches its limit. Once markers have been received in all inputs (\autoref{fig:snapshots-highlights}(b)) the task can proceed with snapshotting while also notifying downstream tasks. In the same atomic operation markers are broadcasted further and local snapshotting is triggered concurrently(\autoref{fig:snapshots-highlights}(c)). Depending on the backend support, snapshots can be triggered and be executed asynchronously by another thread, thus, inducing zero impact to the overall throughput. Once local snapshotting is initiated all input channels are unblocked and the computation continues as normal (\autoref{fig:snapshots-highlights}(d)) in the next epoch.
 
-\subsubsection{Dealing with Cycles}
+\subsubsection{Dealing with Dataflow Cycles}
 
 \begin{algorithm}
 $outputs$ $\leftarrow$ configured\_outputs\;
@@ -100,12 +100,12 @@ $log \leftarrow \emptyset$ \;
 
 \Hdl{$\langle marker \rangle$}{
 \eIf{$isLogging$}{
-triggerSnapshot(log) \;
+triggerSnapshot($log$) \;
 $log \leftarrow \emptyset$ \;
 }{
 $isLogging \leftarrow true$ \;
 \ForEach{$out \in outputs$}{
-$out$.send($langle marker \rangle$)\;
+$out$.send($\langle marker \rangle$)\;
 }
 }
 }
@@ -117,10 +117,15 @@ $out$.send($langle marker \rangle$)\;
 $out$.send($record$)\;
 }
 }
-\caption{Iteration Ingress Task Protocol}
-\label{alg:snapdag}
+\caption{\texttt{IterationSource} Snapshotting Protocol}
+\label{alg:snapcycle}
 \end{algorithm}
 
+Dataflow graphs in Flink can also support cycles. Cycles are currently defined explicitly through Flink's programming API as asynchronous iterations, though structured iterations (e.g., on stream windows) are also considered and can be supported in the future. Snapshotting within cycles in dataflow graphs are being handled as a special case and implemented by specific tasks which we call Iteration Sources. Each dataflow cycle is orchestrated through two implicit tasks: an \texttt{IterationSource} and \texttt{IterationSink}. These two tasks give the impression of regular dataflow sources and sinks, however, they are collocated to share an in-memory buffer and thus implement the feedback logic (and cyclic snapshotting) without being exposed to the developer.
+
+The default stream alignment logic presented (\autoref{alg:snapdag}) would result into an incomplete distributed snapshot if it would be applied \emph{apriori} on cyclic graphs. That is due to the fact that records belonging to prior epochs could still remain indefinitely in-transit within a cycle even after a snapshot has been taken over. Thus, it is of high importance to include these records in the snapshot (or their side effects) in order to get a complete picture of the correct distributed execution \cite{chandy1985distributed,elnozahy2002survey}. Alternative approaches to this problem consider a ``flushing'' phase which enforces the inclusion of all the in-transit records to the internal state of each operator \cite{jacques2016consistent}, however, we argue that this is only relevant to the state of a cycle. Thus, we execute a similar special logging protocol that runs transparently and solely within the \texttt{IterationSource} instances of each cycle.
+
+As described in detail in \autoref{alg:snapcycle}, \texttt{IterationSource} tasks receive a special marker from the runtime signifying each epoch, same as the sources of the dataflow graph. At that instance, they disseminate markers further within a cycle and start logging in their own registered managed state all in-transit events that exist within a cycle in that respective partition. Once the marker of the snapshot is received back through their respective collocated \texttt{IterationSink} they trigger a snapshot of that log containing a complete upstream log of all records in-transit that belong to that epoch. It is important to note that the default alignment protocol that runs in the rest of the tasks within a cycle ensures that no records belonging to subsequent epochs will transit prior to the marker and thus the complete state of a cycle is logged consistently. This special logic also restricts channel logging to cycles and does not enforce anything other than task states to be included in the snapshot for the rest of the dataflow graph (unlike Chandy and Lamport's \cite{chandy1985distributed} and any other state-of-the-art protocols for weakly connected graphs \cite{elnozahy2002survey,jacques2016consistent,murray2013naiad}).
 
 
 \subsection{Savepoints and Rollback}
