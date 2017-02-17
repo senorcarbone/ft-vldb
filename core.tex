@@ -8,12 +8,24 @@
 \vspace{-4mm}
 \end{figure*}
 
+
 \section{Core Concepts and Mechanisms}
 \label{sec:core}
 
 \subsection{System Model}
 
-Each processing pipeline in Flink translates into a logical directed graph $G = (\mathcal{T}, \mathcal{E})$ consisting of a set of vertices $\mathcal{T}$ representing tasks of finest-grained computation and a set of edges $\mathcal{E}$ reprenting data channels between tasks in $\mathcal{T}$. A task $t \in \mathcal{T}$ can encapsulate the logic of a single user-defined operation (e.g., \texttt{map}, \texttt{filter}, \texttt{fold}) or multiple operations that are fused together. Fusion is a standard logical dataflow optimisation \cite{hirzel2014catalog,chambers2010flumejava} which is also applied on Flink during the composition of $G$. 
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth / 2]{figures/graphs.pdf}
+\caption{Dataflow Graph Representations.} 
+\label{fig:graphs}
+\vspace{-4mm}
+\end{figure}
+
+Each processing pipeline in Flink is first defined into a logical directed graph $G = (\mathcal{T}, \mathcal{E})$ where $\mathcal{T}$ a set of vertices representing tasks of fine-grained computation and a set of edges $\mathcal{E}$ representing data subscriptions between tasks in $\mathcal{T}$ (\autoref{fig:graphs}(a)). Data subscriptions can apply arbitrarily between tasks in $\mathcal{T}$ and typically compile from forward are shuffle dependencies prescribed by the programming model. A task $t \in \mathcal{T}$ can encapsulate the logic of a single operation (e.g., \texttt{map}, \texttt{filter}, \texttt{fold}, \texttt{window}). However, standard logical dataflow optimisations  such as fusion \cite{hirzel2014catalog,chambers2010flumejava} are also applied in an intermediate step which allows operators to share the same task in $\mathcal{T}$ (\autoref{fig:graphs}(b)). Each logical graph is directly mapped to a physical, distributed graph $G^*$ upon deployment or rescaling (\autoref{fig:graphs}(c)). In the rest of this section we are going to introduce the concept of managed state in Apache Flink, followed by physical state partitioning and a description of how state and data are being allocated to tasks.
+
+
 
 \subsubsection{Managed State}
 
@@ -25,7 +37,7 @@ Each stream operation in Flink can declare consistent state and update it contin
 
 \subsubsection{State Partitioning and Allocation}
 
-The mapping of a logical dataflow graph to $G$, the physical, distributed execution graph occurs when a pipeline is deployed, on its initial run or upon reconfiguration (e.g., for scale-out). During that stage each logical task $t \in \mathcal{T}$ is mapped to a number of physical tasks $t^1, t^2, \ldots, t^\pi$, each of which gets allocated to available containers throughout a cluster (e.g., using YARN \cite{vavilapalli2013apache}) up to the decided degree of parallelism $\pi \in \mathbb{N^+}$. For tasks that have declared managed state, it is important to consistently allocate data stream partitions or re-allocate in the case of reconfiguration. The partitioning process makes sure that each parallel physical task $t^i , \forall i : 1 \leq i \leq \pi$ will only receive records (and maintain state) that belong to a pre-allocated range of keys. Since the key space $\mathcal{K}$ can be user-defined Flink's runtime pre-partitions keys to an intermediate circular space of ``key-groups'' : $\mathcal{K}^* \subset \mathbb{N^+}$ given a maximum parallelism $\pi\text{-max}$ and a hash function $h$ as such:
+The mapping of a logical dataflow graph $G$ to $G^* = \{\mathcal{T^*}, \mathcal{E^*}\}$, the physical, distributed execution graph (\autoref{fig:graphs}(c)) occurs when a pipeline is deployed, on its initial run or upon reconfiguration (e.g., for scale-out). During that stage each logical task $t \in \mathcal{T}$ is mapped to a number of physical tasks $t^1, t^2, \ldots, t^\pi \in \mathcal{T^*}$, each of which gets allocated to available containers throughout a cluster (e.g., using YARN \cite{vavilapalli2013apache}) up to the decided degree of parallelism $\pi \in \mathbb{N^+}$. For tasks that have declared managed state, it is important to consistently allocate data stream partitions or re-allocate in the case of reconfiguration. The partitioning process makes sure that each parallel physical task $t^i , \forall i : 1 \leq i \leq \pi$ will only receive records (and maintain state) that belong to a pre-allocated range of keys. Since the key space $\mathcal{K}$ can be user-defined Flink's runtime pre-partitions keys to an intermediate circular space of ``key-groups'' : $\mathcal{K}^* \subset \mathbb{N^+}$ given a maximum parallelism $\pi\text{-max}$ and a hash function $h$ as such:
 
 \noindent $\mathcal{K}^* = \{ h(k)\text{ \texttt{mod} }\pi\text{-max}\text{ }|\text{ }k \in \mathcal{K}, \pi\text{-max} \in \mathbb{N^+}, h: \mathcal{K} \rightarrow \mathbb{N^+} \}$
 
