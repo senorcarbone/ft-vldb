@@ -1,4 +1,11 @@
 %!TEX root = main.tex
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth / 2]{figures/graphs.pdf}
+\caption{Dataflow Graph Representations.} 
+\label{fig:graphs}
+\vspace{-4mm}
+\end{figure}
 
 \begin{figure*}[t!]
 \centering
@@ -14,14 +21,6 @@
 
 \subsection{System Model}
 
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=\textwidth / 2]{figures/graphs.pdf}
-\caption{Dataflow Graph Representations.} 
-\label{fig:graphs}
-\vspace{-4mm}
-\end{figure}
 
 Each processing pipeline in Flink is first defined into a logical directed graph $G = (\mathcal{T}, \mathcal{E})$ where $\mathcal{T}$ a set of vertices representing tasks of fine-grained computation and a set of edges $\mathcal{E}$ representing data subscriptions between tasks in $\mathcal{T}$ (\autoref{fig:graphs}(a)). Data subscriptions can apply arbitrarily between tasks in $\mathcal{T}$ and typically compile from forward are shuffle dependencies prescribed by the programming model. A task $t \in \mathcal{T}$ can encapsulate the logic of a single operation (e.g., \texttt{map}, \texttt{filter}, \texttt{fold}, \texttt{window}). However, standard logical dataflow optimisations  such as fusion \cite{hirzel2014catalog,chambers2010flumejava} are also applied in an intermediate step which allows operators to share the same task in $\mathcal{T}$ (\autoref{fig:graphs}(b)). Each logical graph is directly mapped to a physical, distributed graph $G^*$ upon deployment or rescaling (\autoref{fig:graphs}(c)). In the rest of this section we are going to introduce the concept of managed state in Apache Flink, followed by physical state partitioning and a description of how state and data are being allocated to tasks.
 
@@ -65,7 +64,7 @@ The protocol assumes a fail-recovery, deterministic process model \cite{elnozahy
 
 \subsubsection{Directed Acyclic Graphs}
 
-\begin{algorithm}
+\begin{algorithm}[t!]
 $inputs$ $\leftarrow$ configured\_inputs\;
 $outputs$ $\leftarrow$ configured\_outputs\;
 $blocked \leftarrow \emptyset$ \;
@@ -105,7 +104,7 @@ Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets i
 
 \subsubsection{Dealing with Dataflow Cycles}
 
-\begin{algorithm}
+\begin{algorithm}[t!]
 $outputs$ $\leftarrow$ configured\_outputs\;
 $isLogging \leftarrow false$ \;
 $log \leftarrow \emptyset$ \;
