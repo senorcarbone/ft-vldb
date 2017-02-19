@@ -27,7 +27,27 @@ One of the advantages of the pipelined snapshotting protocol presented in \autor
 Another feature that is provided to tasks as an optional asynchronous subscription-based mechanism is to trigger notifications about completed snapshots back at the tasks that request them. This is especially useful for garbage collection, discarding write ahead logs or for executing output commit protocols as we explain further in \autoref{sec:outputcommit}.
 
 \subsection{Queryable State}
-\paris{We can briefly mention how queryable state is implemented for accessing uncommitted active state from outside the system.}
+
+A recent, yet notable addition among Flink's state management mechanisms, is the ability to execute selective ad-hoc queries on managed state from outside the system. Continuous data stream processing pipelines often build and maintain partitioned state inside operators that could be potentially harnessed at any time and used to provide fast, actionable knowledge, in a similar fashion to in-memory database usage \cite{kipfanalytics}. Queryable state allows for any declared managed state within a pipeline, currently scoped by key, to be accessed outside the system for asynchronous reading, through a subscription-based API. First, managed state that allows for query access is declared in the original application. Upon state declaration, introduced in \autoref{sec:managedstate}, it is possible to allow access from external queries by simply setting a flag in the descriptor that is used to create the actual state, having an assigned unique name for this specific state to be accessed, as such:
+
+\begin{lstlisting}[style=scala]
+//stream processing application logic
+val descriptor: ValueStateDescriptor[MySchema] = ...
+descriptor.setQueryable("myKV")
+...
+val mutState: ValueState[MySchema] = ctx.getState(descriptor)
+\end{lstlisting}
+
+\para{} Upon deployment, a state registry service gets initiated and runs concurrently with the operator holding write access to that state. A client that wishes to read this state can, at any time submit an asynchronous query (obtaining a \texttt{future}) to that service, specifying the job id, registered state name and the key under which the state is active, as shown below:
+
+\begin{lstlisting}[style=scala]
+//client logic
+val client = QueryableStateClient(cfg);
+val readState: Future<?> = client.getKVState(job, "myKV", key);
+MyDeserializer[MySchema](Await.result(readState, timeout));
+\end{lstlisting}
+
+The current implementation of queryable state allows for retrieving and sending, internally through Akka messaging, copies of serialized state values straight from the operator heap memory or the backend store in case of out-of-core state. Despite current limitations to point lookups of the current value (\texttt{ListState} is not yet supported as of Flink v1.2.0) the ability to access state generalizes the usages of a stream processor, beyond the needs of data transformation or application logic needs and adds further potential for ad-hoc data analysis. From a traditional database isolation-level viewpoint, this feature also includes the ability to access and operator on uncommitted state, thus, allowing for a more relaxed, yet highly accessible \emph{read-uncommitted} read isolation, compared to already provided \emph{read-committed} read isolation guaranteed by its specialized sinks through its snapshotting mechanism (see \autoref{sec:outputcommit}).
 
 \subsection{Output Commit}
 \label{sec:outputcommit}
