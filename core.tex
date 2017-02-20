@@ -45,8 +45,6 @@ Upon deployment with parallelism $\pi$ key groups are directly allocated per tas
 \subsection{The Pipelined Snapshotting Protocol}
 \label{sec:snapshots}
 
-\paris{This is the most important section of the paper in my opinion. Please take extra care when you read it to spot any type of ambiguity or errors so that I can correct it.}
-
 Flink's snapshotting protocol provides a uniform way to capture the complete state of a pipeline and roll it back whenever that is required. We will first explain its intuition followed by a more formal definition of the assumptions and description of the protocol for directed acyclic and cyclic graphs respectively.
 
 \subsubsection{Approach Intuition}
