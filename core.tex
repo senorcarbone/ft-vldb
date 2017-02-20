@@ -40,7 +40,7 @@ The mapping of a logical dataflow graph $G$ to $G^* = \{\mathcal{T^*}, \mathcal{
 
 \noindent $\mathcal{K}^* = \{ h(k)\text{ \texttt{mod} }\pi\text{-max}\text{ }|\text{ }k \in \mathcal{K}, \pi\text{-max} \in \mathbb{N^+}, h: \mathcal{K} \rightarrow \mathbb{N^+} \}$
 
-Upon deployment with parallelism $\pi$ key groups are directly allocated per task $t^i$ from $\lceil i \times \frac{\pi\text{-max}}{\pi} \rceil$ to $\lfloor (i+1) \times \frac{\pi\text{-max}}{\pi} \rfloor$. We found that this is a simple way to pre-partition and reallocate state in a pipeline, typically using a non-cryptographic hash function such as murmur hash. As shown in \autoref{sec:implementation}, state snapshots are materialized and indexed per allocated key group at the backend which allows for fast reconfiguration. \paris{@stefan I need some input regarding operator state rescaling.}
+Upon deployment with parallelism $\pi$ key groups are directly allocated per task $t^i$ from $\lceil i \times \frac{\pi\text{-max}}{\pi} \rceil$ to $\lfloor (i+1) \times \frac{\pi\text{-max}}{\pi} \rfloor$. We found that this is a simple way to pre-partition and reallocate state in a pipeline, typically using a non-cryptographic hash function such as murmur hash. As shown in \autoref{sec:implementation}, state snapshots are materialized and indexed per allocated key group at the backend which allows for fast reconfiguration. \texttt{Operator-State}, on the other hand, requires user-defined granularity specification exposed as a \texttt{Collection} of state units. Upon reconfiguration, these \texttt{Collections} are repartitioned to match the new parallelism $\pi$.
 
 \subsection{The Pipelined Snapshotting Protocol}
 \label{sec:snapshots}
