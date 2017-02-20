@@ -38,16 +38,15 @@ descriptor.setQueryable("myKV")
 val mutState: ValueState[MySchema] = ctx.getState(descriptor)
 \end{lstlisting}
 
-\para{} Upon deployment, a state registry service gets initiated and runs concurrently with the task holding write access to that state. A client that wishes to read this state can, at any time submit an asynchronous query (obtaining a \texttt{future}) to that service, specifying the job id, registered state name and the key under which the state is active, as shown below:
+\para{} Upon deployment, a state registry service gets initiated and runs concurrently with the task that holds write access to that state. A client that wishes to read the state for a specific key can, at any time submit an asynchronous query (obtaining a \texttt{future}) to that service, specifying the job id, registered state name and key, as shown below:
 
 \begin{lstlisting}[language=scala]
 //client logic
 val client = QueryableStateClient(cfg);
 var readState: Future[_] = client.getKVState(job, "myKV", key);
-MyDeserializer[MySchema](Await.result(readState, timeout));
 \end{lstlisting}
-
-The current implementation of queryable state allows for retrieving and sending, internally through Akka messaging, copies of serialized state values straight from the operator heap memory or the backend store in case of out-of-core state. Despite current limitations to point lookups of the current value (\texttt{ListState} is not yet supported as of Flink v1.2.0) the ability to access state generalizes the usages of a stream processor, beyond the needs of data transformation or application logic needs and adds further potential for ad-hoc data analysis. From a traditional database isolation-level viewpoint, this feature also includes the ability to access and operator on uncommitted state, thus, allowing for a more relaxed, yet highly accessible \emph{read-uncommitted} read isolation, compared to already provided \emph{read-committed} read isolation guaranteed by its specialized sinks through its snapshotting mechanism (see \autoref{sec:outputcommit}).
+%MyDeserializer[MySchema](Await.result(readState, timeout));
+The current implementation of queryable state allows for retrieving and sending, internally through Akka messaging, copies of serialized state values straight from the operator heap memory or the backend store in case of out-of-core state. Despite current limitations to point lookups of the current value (\texttt{ListState} is not yet supported as of Flink v1.2.0) the ability to access state generalizes the usages of a stream processor, beyond the needs of data transformation or application logic needs and adds further potential for ad-hoc data analysis. From a traditional database isolation-level viewpoint, this feature also includes the ability to access and operator on uncommitted state, thus, allowing for a more relaxed, yet highly accessible \emph{read-uncommitted} read isolation, compared to already provided \emph{read-committed} read isolation guaranteed by its specialized sinks through its snapshotting mechanism (see \autoref{sec:outputcommit}). \gyula{maybe mention the potential of also offering read-committed queryable in case that is supported and well integrated with the backend.}
 
 \subsection{Output Commit}
 \label{sec:outputcommit}
