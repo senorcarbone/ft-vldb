@@ -43,7 +43,7 @@ val mutState: ValueState[MySchema] = ctx.getState(descriptor)
 \begin{lstlisting}[language=scala]
 //client logic
 val client = QueryableStateClient(cfg);
-var readState: Future<?> = client.getKVState(job, "myKV", key);
+var readState: Future[_] = client.getKVState(job, "myKV", key);
 MyDeserializer[MySchema](Await.result(readState, timeout));
 \end{lstlisting}
 
