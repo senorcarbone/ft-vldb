@@ -3,6 +3,26 @@
 \section{Large-Scale Deployments}
 \label{sec:evaluation}
 
+\subsection{A Real-Time Analytics Platform}
+
+King's real-time analytics platform, RBEA[ref here], implemented using Apache Flink, is a showcase of how Flink's stateful processing capabilities can be exploited to build a highly dynamic live service that allows analysts to declare and query consistent state over large-scale event streams. 
+
+RBEA uses Flink's keyed and operator state abstractions to execute dynamic stateful queries on the live event streams. User's of the platform can send new real-time queries to the the running Flink Job using Kafka, which change the configuration of the currently running operators defining new states and computations on the fly. These scripts are used to produce real-time window aggregates and other user output based on user-defined stateful processing logic. 
+
+As user scripts are executed in parallel on multiple operators, failures during script execution need to be backpropagated to all the parallel instances in order the remove all instances of the broken scripts. Iterations are used to implement the failure propagation logic.
+
+Figure ? shows an overview of the RBEA logical execution graph along with the different types of states associated with each operator.
+
+The performance of the state management layer have been evaluated along multiple dimensions:
+\begin{itemize}
+    \item With fixed parallelism measure total checkpoint and alignment time against state size
+    \item With fixed state size measure total checkpoint and alignment time against parallelism
+\end{itemize}
+
+%130 - script engine 
+%390 - aggregations
+%404 - kafka output
+
 \kostas{We probably do not need a traditional evaluation section but rather some numbers from King, Alibaba etc. taken from really large deployments with terabytes of managed state}
 
 \paris{We can also benchmark and collect stats for the following pipeline impact factors: 1) state size (small and large state), 2) alignment (no snapshot - at least once - exactly once), 3) job graph length -> snapshot latency - worse recovery (rollback earlier). Ultimately, it is nice to show the costs of EtE, Snapshot  and Recovery Latency. 

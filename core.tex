@@ -63,9 +63,8 @@ The protocol assumes a fail-recovery, deterministic process model \cite{elnozahy
 	\item Tasks can trigger a \texttt{block} or \texttt{unblock} operation on their input data channels and \texttt{send} events (records or control messages) through their output channels.
 \end{itemize}
 
-\subsubsection{Directed Acyclic Graphs}
 
-\begin{algorithm}[t!]
+\begin{algorithm}[t]
 $inputs$ $\leftarrow$ configured\_inputs\;
 $outputs$ $\leftarrow$ configured\_outputs\;
 $blocked \leftarrow \emptyset$ \;
@@ -91,13 +90,20 @@ $blocked \leftarrow \emptyset$ \;
 \label{alg:snapdag}
 \end{algorithm}
 
-\begin{figure}[t]
+
+\begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth / 2]{figures/snapshots-highlights.pdf}
 \caption{Alignment and Snapshotting Highlights.} 
 \label{fig:snapshots-highlights}
 \vspace{-4mm}
 \end{figure}
+
+
+\subsubsection{Directed Acyclic Graphs}
+
+
+
 
 Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets initiated at the source tasks of the dataflow by the \texttt{TaskManager}, however, for simplicity we assume here that the logic gets initiated upon receiving a special marker event in each and every task (sources would ``receive'' that first through a $Nil$ channel). \autoref{alg:snapdag} summarizes the snapshot alignment and pipelining protocol that executes when a marker is received. Mind that markers and records are handled sequentially by the same underlying thread that also invokes user-defined operators. 
 
