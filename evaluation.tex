@@ -38,11 +38,13 @@ The Rule-Based Event Aggregator (RBEA) by King (MidasPlayer AB) \cite{CUSTOM:web
 
 \autoref{fig:rbea} depicts an overview of the end-to-end Flink pipeline that implements the core of the service. There are two types of streams, ingested from Kafka: a) an \texttt{Event} stream originating from  user actions (circa 30 billion events per day) such as \texttt{GameStarted} or \texttt{GameEnded} and b) a \texttt{Query} stream containing standing queries in the form of serialized scripts written by data analysts through the frontend of RBEA in a provided DSL (e.g., using Groovy or Java). Standing queries in RBEA allow analysts to access user-specific data and event sequences as well as triggering special aggregation logic on sliding data windows (respecting the semantics of Flink's implementation of the Dataflow Model \cite{akidau2015dataflow}). 
 
-The user defined queries are stored and executed inside the [Query Processor] operator which holds the user states accumulated by any stateful processing logic. Every user query is broadcasted to all instances of the [Query Processor] so it can be executed in parallel while game events are partitioned by their associated user ids. Aggregation calls in the RBEA DSL trigger output events from [Query Processor] operator which are subsequently consumed by the [Dynamic Window Aggregator]. This operator assigns the aggregator events to the current event-time window and does the actual aggregation. Aggregated values are sent to the [Output sink] operator which writes them to an external database or Kafka.
+Each standing query is forwarded and executed inside \texttt{[Query Processor]} operator instances which hold managed state entries per user accumulated by any stateful processing logic. A broadcast data dependency is being used to submit the query all instances of the \texttt{[Query Processor]} so it can be executed in parallel while game events are otherwise partitioned by their associated user ids to the same operator. Aggregation calls in the RBEA DSL trigger output events from \texttt{[Query Processor]} operator which are subsequently consumed by the \texttt{[Dynamic Window Aggregator]}. This operator assigns the aggregator events to the current event-time window and applies the actual aggregation logic. Aggregated values are sent to the \texttt{[Output sink]} operator which writes them directly to an external database or Kafka.
 
 %failures during script execution need to be backpropagated to all the parallel instances in order the remove all instances of the broken scripts. Iterations are used to implement the failure propagation logic.
 
-\par{Performance Metrics:} The performance of the state management layer have been evaluated along multiple dimensions:
+
+\para{Performance Metrics:} The performance of the state management layer have been evaluated along multiple dimensions:
+
 \begin{itemize}
     \item With fixed parallelism measure total checkpoint and alignment time against state size
     \item With fixed state size measure total checkpoint and alignment time against parallelism
