@@ -7,44 +7,17 @@
 \vspace{-4mm}
 \end{figure*}
 
-\begin{figure}
-\centering
-\subcaptionbox{Snapshot Duration vs Total Size \stefan{I think the information on how many nodes this was running should be part of the plot or the footer. This is important to interpret the performance and makes the plot more self-contained}}{%
-  \includegraphics[width=0.45\textwidth]{figures/cp1checkpoint.pdf}%
-  }\par\medskip
-\subcaptionbox{Total Alignment Time vs Snapshot Size}{%
-  \includegraphics[width=0.45\textwidth]{figures/cp1align.pdf}%
-  }\par\medskip
-\subcaptionbox{Total Alignment Time (Detailed) vs Parallelism}{%
-  \includegraphics[width=0.45\textwidth]{figures/cp2align.pdf}%
-  }
-\caption{RBEA Deployment Measurements on Snapshots }
-\label{fig:kingmetrics}
-\end{figure}
 
 
 \section{Large-Scale Deployments}
 \label{sec:evaluation}
 
 
-Flink is currently one of the most widespread systems in production\gyula{is this claim true?}, serving as a the core engine for continuous data processing. Large-scale deployments range from dozens to 1000s of nodes and serve a wide variety of data management and analysis needs. In this section, we present a few examples of how Flink's lightweight state management features are being used in practice, within large deployments and also present live metrics and insights.
+Flink is widely used for continuous data analytics in the industry, serving as a the core engine for various small and large-scale data pipeline needs\paris{cite something} (e.g., King, Zalando, Uber, Netflix, ING, Bouygues Telecom, ING, New Relic, MediaMath and New Relic among others). In this section, we present a few examples of how Flink's state management features are being used in practice, within large deployments and also present live metrics and insights.
 
 \paris{@Kostas feel free to edit this section. No need to add your tag. I can see the diffs in sharelatex and fix afterwards}
 
 \para{Alibaba} is actively using Flink in their production cluster (1000+ nodes) to support their critical search service \cite{CUSTOM:web/alibaba} and keep search results and recommendation as fresh and relevant to their active retail catalogue as possible.
-
-%King.com
-
-%\para{Zalando}
-
-%\para{Uber}
-
-
-%\para{Bouygues Telecom}
-
-%\para{ResearchGate}
-
-%Uber, Netflix, ING, MediaMath, New Relic
 
 
 
@@ -59,6 +32,20 @@ Standing queries are forwarded and executed inside \texttt{[Query Processor]} in
 
 %failures during script execution need to be backpropagated to all the parallel instances in order the remove all instances of the broken scripts. Iterations are used to implement the failure propagation logic.
 
+\begin{figure*}[htp]
+\centering
+\subcaptionbox{Snapshot Duration vs Total Size \\ \centering ($\pi$:70, \texttt{state}:[100:500GB], \texttt{hosts}:18)}{%
+  \includegraphics[width=.34\textwidth]{figures/cp1checkpoint.pdf}%
+  }\medskip
+\subcaptionbox{Alignment Time vs Snapshot Size \\ \centering ($\pi$:70, \texttt{state}:[100:500GB], \texttt{hosts}:18)}{%
+  \includegraphics[width=0.34\textwidth]{figures/cp1align.pdf}%
+  }\medskip
+\subcaptionbox{Alignment Time vs Parallelism \\ \centering ($\pi:[30:70]$, \texttt{state}:200GB, \texttt{hosts}:18)}{%
+  \includegraphics[width=0.34\textwidth]{figures/cp2align.pdf}%
+  }
+\caption{RBEA Deployment Measurements on Snapshots }
+\label{fig:kingmetrics}
+\end{figure*}
 
 \subsubsection{Performance Metrics and Insights} The performance metrics presented here were gathered from live deployments of RBEA over weeks of its runtime in order to present insights and discuss the performance costs related to snapshotting, as well as the factors that can affect those costs in a production setting. The production jobs share resources on a YARN cluster with 18 physical machines with identical specification each having 32 CPU cores, 378 GB RAM with both SSD and HDD. All deployments of RBEA are currently using Flink (v.1.2.0) and with the out-of-core RocksDB state backend (backed by SSD) which enables asynchronous snapshotting to HDFS (backed by HDD). The performance of Flink's state management layer, that we discuss bellow,  have been evaluated to address two main questions: 1) What affects  snapshotting latency?, and 2) How and when is normal execution impacted?
 
