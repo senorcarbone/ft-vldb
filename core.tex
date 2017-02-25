@@ -1,4 +1,10 @@
 %!TEX root = main.tex
+
+\section{Core Concepts and Mechanisms}
+\label{sec:core}
+
+\subsection{System Model}
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth / 2]{figures/graphs.pdf}
@@ -6,21 +12,6 @@
 \label{fig:graphs}
 \vspace{-4mm}
 \end{figure}
-
-\begin{figure*}[t!]
-\centering
-\includegraphics[width=\textwidth]{figures/snapshots-overview.pdf}
-\caption{An Example of the Pipelined Snapshotting Protocol.} 
-\label{fig:snapshots-overview}
-\vspace{-4mm}
-\end{figure*}
-
-
-\section{Core Concepts and Mechanisms}
-\label{sec:core}
-
-\subsection{System Model}
-
 
 Each processing pipeline in Flink is first defined into a logical directed graph $G = (\mathcal{T}, \mathcal{E})$ where $\mathcal{T}$ is a set of vertices representing compute tasks and $\mathcal{E}$ is a set of edges representing data subscriptions between tasks in $\mathcal{T}$ (\autoref{fig:graphs}(a)). Data subscriptions can apply arbitrarily between tasks in $\mathcal{T}$ and address dependencies prescribed directly or indirectly via the programming model (e.g., forward, shuffle and hash partitioning). A task $t \in \mathcal{T}$ can encapsulate the logic of a single operation (e.g., \texttt{map}, \texttt{filter}, \texttt{fold}, \texttt{window}). However, standard logical dataflow optimisations  such as fusion \cite{hirzel2014catalog,chambers2010flumejava} are also applied in an intermediate step allowing operators to share the same task in $\mathcal{T}$ (\autoref{fig:graphs}(b)). Each logical graph is directly mapped to a physical, distributed graph $G^*$ upon deployment or rescaling (\autoref{fig:graphs}(c)). In the rest of this section we are going to introduce the concept of managed state in Apache Flink, followed by physical state partitioning and a description of how state and data are being allocated to tasks.
 
@@ -42,6 +33,15 @@ For local, per-task computation such as for example a partial machine learning t
 
 %\stefan{The last sentence is partially incorrect. Right now, there is only list state for operator state, but it is also semantically different. It resembles more a value state and the only purpose of providing it in a list is breaking it down to repartitionable units for rescaling. Before rescaling was introduced, this state was just one huge black box, and Flink could never reason about how to redistribute this. Now, the user can divide the state into multiple black boxes. While they are still opaque for Flink, the system is now free to redistribute them.}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/snapshots-overview.pdf}
+\caption{An Example of the Pipelined Snapshotting Protocol.} 
+\label{fig:snapshots-overview}
+\vspace{-4mm}
+\end{figure*}
+
+
 \subsubsection{State Partitioning and Allocation}
 
 \para{Physical Representation}: The mapping of a logical graph $G$ to $G^* = \{\mathcal{T^*}, \mathcal{E^*}\}$, the physical, distributed execution graph (\autoref{fig:graphs}(c)) occurs when a pipeline is deployed, on its initial run or upon reconfiguration (e.g., for scale-out). During that stage each logical task $t \in \mathcal{T}$ is mapped to a number of physical tasks $t^1, t^2, \ldots, t^\pi \in \mathcal{T^*}$, each of which gets deployed to available containers throughout a cluster (e.g., using YARN \cite{vavilapalli2013apache} or Mesos \cite{hindman2011mesos}) up to the decided degree of parallelism $\pi \in \mathbb{N^+}$. 
@@ -50,10 +50,11 @@ For local, per-task computation such as for example a partial machine learning t
 
 \noindent $\mathcal{K}^* = \{ h(k)\text{ \texttt{mod} }\pi\text{-max}\text{ }|\text{ }k \in \mathcal{K}, \pi\text{-max} \in \mathbb{N^+}, h: \mathcal{K} \rightarrow \mathbb{N^+} \}$
 
-\noindent This mapping makes sure that each parallel physical task $t^i , \forall i : 1 \leq i \leq \pi$ will only receive coarse-grained state, making a key-group the atomic unit for re-allocation. The intuition behind key groups lies in the trade off between reconfiguration time (disk scans) and metadata needed to re-allocate state (included within snapshots). On one extreme each parallel task could scan the whole state (often remotely) to retrieve the values of all keys assigned to it. This yields significant amounts of unnecessary sequential I/O. On the opposite extreme snapshots could contain offsets for every single key and each task could selectively seek and fetch its assigned keyed states. However, this approach increases indexing costs (num. of offsets) and can additionally cause high random I/O as keys are scattered arbitrarily, thus, not benefiting from sequential reads. Key-groups offer a substantial compromise: reads are limited to data that is required and key-groups are typically large enough for sequential reading (if $\pi\text{-max}$ is set appropriately low). In the uncommon case where $|\mathcal{K}| < \pi\text{-max}$ it is possible that task instances simply receive no shard from the state.
+\noindent This mapping ensures that each parallel physical task $t^i , \forall i : 1 \leq i \leq \pi$ will receive coarse-grained states per group, making a key-group the atomic unit for re-allocation. The intuition behind key-groups lies in the trade off between reconfiguration time (disk scans) and metadata needed to re-allocate state (included within snapshots). On one extreme each parallel task could scan the whole state (often remotely) to retrieve the values of all keys assigned to it. This yields significant amounts of unnecessary sequential I/O. On the opposite extreme snapshots could contain offsets for every single key and each task could selectively seek and fetch its assigned keyed states. However, this approach increases indexing costs (num. of offsets) and can additionally cause high random I/O as keys are scattered arbitrarily, thus, not benefiting from sequential reads. Key-groups offer a substantial compromise: reads are limited to data that is required and key-groups are typically large enough for sequential reading (if $\pi\text{-max}$ is set appropriately low). In the uncommon case where $|\mathcal{K}| < \pi\text{-max}$ it is possible that task instances simply receive no shard from the keyed state.
 
 \para{State Re-Allocation}: To re-assign state, we employ an equal-sized  key-group range allocation. For $\pi$ parallel instances, each instance $t^i$ receives a range of key-groups from $\lceil i \times \frac{\pi\text{-max}}{\pi} \rceil$ to $\lfloor (i+1) \times \frac{\pi\text{-max}}{\pi} \rfloor$. Seeks are costly, especially in distributed file systems. Nevertheless, by assigning contiguous key-groups we eliminate unnecessary seeks and read congestion, yielding low latency upon re-allocation. 
 \texttt{Operator-State} entries, which cannot be scoped by a key, are persisted sequentially (combining potential finer-grained atomic states defined across tasks), per operator, within snapshots and re-assigned in round-robin.
+
 % across $\pi$ parallel instances. 
 
 %\stefan{You could use the black-box explanation that I mentioned in earlier comments. Operator-state is simply reassigned in round-robin, aiming to balance the number of assigned states among all tasks as much as possible. Additionally, we also have features called global and broadcast state. It is fully implemented, but currently not exposed in public API. This feature is based on replicating operator state from one task to all tasks upon restart, where replication means that all receiver read this from the same source, they just get a handle. In global state, we do a one-to-all replication (initially only one task has this task, upon restart it is replicated to all tasks), in broadcast state, we do all-to-all. }
@@ -63,7 +64,34 @@ For local, per-task computation such as for example a partial machine learning t
 
 Flink's snapshotting protocol provides a uniform way to capture the complete state of a pipeline and roll it back whenever that is required. We will first explain its intuition followed by a more formal definition of the assumptions and description of the protocol for directed acyclic and cyclic graphs respectively.
 
+
 \subsubsection{Approach Intuition}
+
+A continuous stream execution is conceptually divided into logical periods that ``cut'' a distributed data stream into consecutive finite sets of records (\autoref{fig:snapshots-overview}), which we call \emph{epochs}. An \emph{epoch} can be triggered on-the-fly, periodically by the system or on-demand by the user and is decoupled from any application logic (e.g., windowing constrains). A snapshot of the computation at \emph{epoch} $n$ refers to a copy of the internal state of each task $t \in \mathcal{T^*}$ after the system fully ingests every input record from the beginning of the computation (\emph{epoch} 0) up to and including \emph{epoch} $n$. In case of a failure during or before a snapshot of \emph{epoch} $n$ is acquired we can simply revert the global state of the distributed dataflow graph to a previous \emph{epoch} (e.g., $n-1$). A discrete approach to snapshotting would be to let the distributed dataflow fully ingest \emph{epoch} $n$ independently, store the internal state of each task $t \in \mathcal{T^*}$ and proceed with \emph{epoch} $n+1$ (similarly to micro-batching \cite{zaharia2012discretized}). However, this approach generally leads to high latency and underutilization costs related to the coordination of a discrete execution which is hard to amortize \cite{venkataramandrizzle}. Furthermore, other protocols either disrupt normal execution \cite{murray2013naiad,jacques2016consistent} or are incapable of supporting weakly connected graphs \cite{chandy1985distributed} which are the norm in distributed dataflow processing.
+
+Instead, Flink's snapshotting protocol pipelines progressively the partial acquisition of task states to eventually acquire a complete snapshot, respecting \emph{epochs}, while running concurrently alongside normal operation. Special markers are injected in each data stream partition at the dataflow sources, coordinated by the runtime and get disseminated throughout the dataflow graph as depicted in \autoref{fig:snapshots-overview}. Markers signal distributed tasks of new epochs and thus aid to establish the appropriate moment to snapshot each local state and proceed with further processing promptly. Tasks with multiple inputs execute an \emph{alignment} phase (e.g., tasks $t3$ and $t5$ in \autoref{fig:snapshots-overview}) upon which they prioritize exclusively inputs from pending \emph{epochs}. Alignment is decentralized and eliminates the need to fully consume an epoch or log records in transit before snapshotting. As we explain in more detail further, cyclic graphs require partial channel logging only limited to each dataflow cycle. The snapshotting protocol is coordinated centrally by the \emph{JobManager} and each invocation eventually completes or gets aborted (e.g., when a failure occurs). In either case the overall dataflow computation can always progress without interruptions and consecutive snapshots will eventually complete.
+
+\subsubsection{Main Assumptions}
+
+The protocol assumes a fail-recovery, deterministic process model \cite{elnozahy2002survey} where a partial process failure can be masked by redeployment and restoration of prior operational states. In detail, our protocol builds on the following assumptions:
+
+%\begin{itemize}
+\para{I}: Input data streams are durably logged and indexed by an external logging system such as Apache Kafka \cite{kreps2011kafka}. That enables dataflow sources to re-consume input from a specific logical time (offset) by restoring their state. 
+%If that is not supported, similar logging functionality has to be implemented at the sources of the pipeline. 
+
+\para{II}: Directional data channels between tasks are quasi-reliable, respect a FIFO delivery order and can be blocked or unblocked. When a channel is blocked in-transit messages are internally buffered (and possibly spilled to disk) and can be delivered on that end once it unblocks.
+
+\para{III}: Tasks can trigger a \texttt{block} or \texttt{unblock} operation on their input data channels and \texttt{send} events (records or control messages) through their output channels.
+%\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth / 2]{figures/snapshots-highlights.pdf}
+\caption{Alignment and Snapshotting Highlights.} 
+\label{fig:snapshots-highlights}
+\vspace{-4mm}
+\end{figure}
+\subsubsection{Directed Acyclic Graphs}
 
 
 \begin{algorithm}[t]
@@ -92,36 +120,18 @@ $blocked \leftarrow \emptyset$ \;
 \label{alg:snapdag}
 \end{algorithm}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\textwidth / 2]{figures/snapshots-highlights.pdf}
-\caption{Alignment and Snapshotting Highlights.} 
-\label{fig:snapshots-highlights}
-\vspace{-4mm}
-\end{figure}
-
-
-A continuous stream execution is conceptually divided into logical periods that ``cut'' a distributed data stream into consecutive finite sets of records (\autoref{fig:snapshots-overview}), which we call \emph{epochs}. An \emph{epoch} can be triggered on-the-fly, periodically by the system or on-demand by the user and is decoupled from any application logic (e.g., windowing constrains). A snapshot of the computation at \emph{epoch} $n$ refers to a copy of the internal state of each task $t \in \mathcal{T^*}$ after the system fully ingests every input record from the beginning of the computation (\emph{epoch} 0) up to and including \emph{epoch} $n$. In case of a failure during or before a snapshot of \emph{epoch} $n$ is acquired we can simply revert the global state of the distributed dataflow graph to a previous \emph{epoch} (e.g., $n-1$). A discrete approach to snapshotting would be to let the distributed dataflow fully ingest \emph{epoch} $n$ independently, store the internal state of each task $t \in \mathcal{T^*}$ and proceed with \emph{epoch} $n+1$ (similarly to micro-batching \cite{zaharia2012discretized}). However, this approach generally leads to high latency and underutilization costs related to the coordination of a discrete execution which is hard to amortize \cite{venkataramandrizzle}. Furthermore, other protocols either disrupt normal execution \cite{murray2013naiad,jacques2016consistent} or are incapable of supporting weakly connected graphs \cite{chandy1985distributed} which are the norm in distributed dataflow processing.
-
-Instead, Flink's snapshotting protocol pipelines progressively the partial acquisition of task states to eventually acquire a complete snapshot, respecting \emph{epochs}, while running concurrently alongside normal operation. Special markers are injected in each data stream partition at the dataflow sources, coordinated by the runtime and get disseminated throughout the dataflow graph as depicted in \autoref{fig:snapshots-overview}. Markers signal distributed tasks of new epochs and thus aid to establish the appropriate moment to snapshot each local state and proceed with further processing promptly. Tasks with multiple inputs execute an \emph{alignment} phase (e.g., tasks $t3$ and $t5$ in \autoref{fig:snapshots-overview}) upon which they prioritize exclusively inputs from pending \emph{epochs}. Alignment is decentralized and eliminates the need to fully consume an epoch or log records in transit before snapshotting. As we explain in more detail further, cyclic graphs require partial channel logging only limited to each dataflow cycle. The snapshotting protocol is coordinated centrally by the \emph{JobManager} and each invocation eventually completes or gets aborted (e.g., when a failure occurs). In either case the overall dataflow computation can always progress without interruptions and consecutive snapshots will eventually complete.
-
-\subsubsection{Main Assumptions}
-
-The protocol assumes a fail-recovery, deterministic process model \cite{elnozahy2002survey} where a partial process failure can be masked by redeployment and restoration of prior operational states. In detail, our protocol builds on the following assumptions:
-
-\begin{itemize}
-	\item Input data streams are durably logged and indexed by an external logging system such as Apache Kafka \cite{kreps2011kafka}. That means that dataflow sources can re-consume input from a specific logical time by restoring their state (offset per stream partition). If that is not supported, similar logging functionality has to be implemented at the sources of the pipeline. 
-	\item Directional data channels between tasks are quasi-reliable, respect a FIFO delivery order and can be blocked or unblocked. When a channel is blocked in-transit messages are internally buffered (and possibly spilled to disk) and can be delivered on that end once it unblocks.
-	\item Tasks can trigger a \texttt{block} or \texttt{unblock} operation on their input data channels and \texttt{send} events (records or control messages) through their output channels.
-\end{itemize}
-
-\subsubsection{Directed Acyclic Graphs}
-
 Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets initiated at the source tasks of the dataflow by the \texttt{TaskManager}, however, for simplicity we assume here that the logic gets initiated upon receiving a special marker event in each and every task (sources would ``receive'' that first through a $Nil$ channel). \autoref{alg:snapdag} summarizes the snapshot alignment and pipelining protocol that executes when a marker is received. Mind that markers and records are handled sequentially by the same underlying thread that also invokes user-defined operators. 
 
 \para{Alignment:} \autoref{fig:snapshots-highlights} vizualizes the steps prior to and during snapshotting in more detail. When a task receives a snapshot marker on one of its inputs it blocks that channel since all computation associated with the current epoch has to finish before continuing further (\autoref{fig:snapshots-highlights}(a)). The blocking operation might result into spilling of in-transit records within that channel to disk, if allocated memory for network buffers reaches its limit. Once markers have been received in all inputs (\autoref{fig:snapshots-highlights}(b)) the task can further notify downstream tasks while also proceeding with snapshotting. Markers are first broadcasted forward and then local snapshotting is triggered, both of which can progress concurrently without sacrificing consistency (\autoref{fig:snapshots-highlights}(c)). Depending on the backend support, snapshots can be triggered and executed asynchronously by another thread, thus, minimizing their impact to the overall throughput. Once local snapshotting is initiated (\autoref{fig:snapshots-highlights}(d)) input channels are unblocked and regular operation resumes to the next epoch.
 
 \subsubsection{Dealing with Dataflow Cycles}
+
+
+
+
+Dataflow graphs in Flink can also support cycles. Cycles are currently defined explicitly through Flink's programming API as asynchronous iterations, though structured iterations (e.g., on stream windows) are also considered and can be supported in the future. Snapshotting within cycles in dataflow graphs is handled as a special case and implemented by system-specific, implicit tasks: an \texttt{IterationHead} and \texttt{IterationTail}. These two tasks types give the impression of regular dataflow \emph{source} and \emph{sink} respectively, however, they are collocated to share an in-memory buffer and thus implement the feedback logic (and cyclic snapshotting) transparently.
+
+The default stream alignment logic presented (\autoref{alg:snapdag}) would result into an incomplete distributed snapshot if it would be applied \emph{apriori} on cyclic graphs. That is due to the fact that records belonging to prior epochs could still remain indefinitely in-transit within a cycle even after a snapshot has been taken over. Thus, it is of high importance to include these records in the snapshot (or their side effects) in order to get a complete picture of the correct distributed execution \cite{chandy1985distributed,elnozahy2002survey}. Alternative approaches to this problem consider a ``flushing'' phase which enforces the inclusion of all the in-transit records to the internal state of each task \cite{jacques2016consistent}, however, we argue that this problem is only relevant to the state of a cycle. Thus, we execute a similar special logging protocol that runs solely within the \texttt{IterationHead} instances of each cycle.
 
 \begin{algorithm}[t!]
 $outputs$ $\leftarrow$ configured\_outputs\;
@@ -151,9 +161,6 @@ $out$.send($record$)\;
 \label{alg:snapcycle}
 \end{algorithm}
 
-
-Dataflow graphs in Flink can also support cycles. Cycles are currently defined explicitly through Flink's programming API as asynchronous iterations, though structured iterations (e.g., on stream windows) are also considered and can be supported in the future. Snapshotting within cycles in dataflow graphs is handled as a special case and implemented by system-specific, implicit tasks: an \texttt{IterationHead} and \texttt{IterationTail}. These two tasks types give the impression of regular dataflow \emph{source} and \emph{sink} respectively, however, they are collocated to share an in-memory buffer and thus implement the feedback logic (and cyclic snapshotting) transparently.
-
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth / 2]{figures/cycle-highlights.pdf}
@@ -161,8 +168,6 @@ Dataflow graphs in Flink can also support cycles. Cycles are currently defined e
 \label{fig:cycle-highlights}
 \vspace{-4mm}
 \end{figure}
-
-The default stream alignment logic presented (\autoref{alg:snapdag}) would result into an incomplete distributed snapshot if it would be applied \emph{apriori} on cyclic graphs. That is due to the fact that records belonging to prior epochs could still remain indefinitely in-transit within a cycle even after a snapshot has been taken over. Thus, it is of high importance to include these records in the snapshot (or their side effects) in order to get a complete picture of the correct distributed execution \cite{chandy1985distributed,elnozahy2002survey}. Alternative approaches to this problem consider a ``flushing'' phase which enforces the inclusion of all the in-transit records to the internal state of each task \cite{jacques2016consistent}, however, we argue that this problem is only relevant to the state of a cycle. Thus, we execute a similar special logging protocol that runs solely within the \texttt{IterationHead} instances of each cycle.
 
 As described in detail in \autoref{alg:snapcycle} and also visualized in \autoref{fig:cycle-highlights}, \texttt{IterationHead} tasks receive a special marker from the runtime signifying each epoch, same as the sources of the dataflow graph. At that instance, they disseminate markers further within a cycle and start logging in their own registered managed state all in-transit events that exist within a cycle in that respective partition (\autoref{fig:cycle-highlights}(a)). Once the marker of the snapshot is received back through their respective collocated \texttt{IterationTail} (\autoref{fig:cycle-highlights}(c)) they trigger a snapshot of that log containing a complete backup of all transmitted records that belong to that epoch (\autoref{fig:cycle-highlights}(d)) (this is also known as ``upstream backup''). It is important to note that the default alignment logic executed by the rest of the tasks within a cycle (\autoref{fig:cycle-highlights}(b)) ensures that no records belonging to subsequent epochs will transit prior to the marker and thus the complete state of a cycle is logged consistently. This special logic also restricts channel logging to cycles and does not enforce anything other than task states to be included in the snapshot for the rest of the dataflow graph (unlike Chandy and Lamport's \cite{chandy1985distributed} algorithm or state-of-the-art protocols that focus on weakly connected dataflow graphs \cite{elnozahy2002survey,jacques2016consistent,murray2013naiad}).
 
@@ -181,8 +186,10 @@ Distributed snapshots, described previously in \autoref{sec:snapshots} form the 
 
 \subsubsection{Savepoints and Usages}
 \label{sec:savepoints}
-Flink's snapshots offer a lightweight, yet complete ``materialized view'' of a continuous pipeline which can be used in arbitrary ways to load, re-partition and therefore re-deploy otherwise complicated states right out from distributed storage. Snapshots are, in fact, also exposed to the user or operations engineer in the manageable and flexible form of \emph{savepoints}. A \emph{savepoint} is an externally stored snapshot (i.e., the metadata pointing to pipeline state) that can be managed by users for various custom operational needs. For example, when a new version of the system is released it is recommended to trigger a savepoint for each active pipeline, upgrade the system, and then restore all pending computations at the epoch that they were left of. Other common usages of savepoints are to update application logic (e.g., software patches) of already running jobs by replacing operators accessing the same snapshotted state or adding new state entries instead. In turn, the ability to restore computation and repartition state on updated application logic further enables forking and versioning capabilities, similarly to version control systems, yet in a distributed continuous processing environment (an example depicted in \autoref{fig:savepoints}). Finally, Flink also allows periodic snapshots to be externalized in the form of savepoints on configured directories for cases where manual savepoint archiving and bookeeping is preferred and perhaps keep a logged history of the overall computation. \paris{perhaps we could elaborate more here and add a motivating figure with snapshots and usages}
-\stefan{While savepoints and checkpoints are currently in the same format, we are planning to change this in the future. In particular, we are talking about costly features or properties, such as rescalability. We want to keep checkpoints as cheap as possible, at the cost of not supporting certain ops like rescaling from checkpoints. Savepoints, in turn, could be more costly but provide rescalability. Key-groups come with a certain cost, not only in meta data. Some backends may require some live partitioning before writing the snapshot. On top of that, key-groups can also mess with other natural groupings, such as namespaces that we find in windowing. For example, it would be nice to have locality for all keys in a window, so that we can quickly iterate over the window. However, we need to write data in key-group order, which forces us to split up the natural grouping of windows, into up to one partial window per key-group. Also in the context of incremental snapshotting, key-groups can easily become problematic. So checkpoints might support incremental snapshots, while savepoints might require full snapshots.}
+Flink's snapshots offer a lightweight, yet complete ``picture'' of a pipeline which can be used in arbitrary ways to load and re-allocate otherwise complicated states right out from distributed storage. Snapshots are, in fact, also exposed to the user or operations engineer in the manageable and flexible form of \emph{savepoints}. A \emph{savepoint} is an externally stored snapshot (i.e., the metadata pointing to pipeline state) that can be managed by users for various custom operational needs. For example, when a new version of the system is released it is recommended to trigger a savepoint for each active pipeline, upgrade the system, and then restore all pending computations at the epoch that they were left of. Other common usages of savepoints are to update application logic (e.g., software patches) of already running jobs by replacing operators accessing the same snapshotted state or adding new state entries instead. In turn, the ability to restore computation and repartition state on updated application logic further enables forking and versioning capabilities, similarly to version control systems, yet in a distributed continuous processing environment (an example depicted in \autoref{fig:savepoints}). Finally, Flink also allows periodic snapshots to be externalized in the form of savepoints on configured directories for cases where manual savepoint archiving and bookkeeping is preferred and perhaps keep a logged history of the overall computation. 
+
+%\paris{perhaps we could elaborate more here and add a motivating figure with snapshots and usages}
+%\stefan{While savepoints and checkpoints are currently in the same format, we are planning to change this in the future. In particular, we are talking about costly features or properties, such as rescalability. We want to keep checkpoints as cheap as possible, at the cost of not supporting certain ops like rescaling from checkpoints. Savepoints, in turn, could be more costly but provide rescalability. Key-groups come with a certain cost, not only in meta data. Some backends may require some live partitioning before writing the snapshot. On top of that, key-groups can also mess with other natural groupings, such as namespaces that we find in windowing. For example, it would be nice to have locality for all keys in a window, so that we can quickly iterate over the window. However, we need to write data in key-group order, which forces us to split up the natural grouping of windows, into up to one partial window per key-group. Also in the context of incremental snapshotting, key-groups can easily become problematic. So checkpoints might support incremental snapshots, while savepoints might require full snapshots.}
 
 \subsubsection{Consistent State Rollback}
 A global snapshot encapsulates all metadata needed to retrieve back serialized state that is stored and partitioned (i.e., key-groups) in a configured backend. Upon re-deployment of an application new task instances are being scheduled throughout the cluster in topological order and retrieve their allocated shared of state upon their initialization. In the case of  \texttt{Iteration Heads}, all records logged during the snapshot are retrieved and flushed to output channels prior to their regular loop-back forwarding logic. Eventually all states within the pipeline are progressively retrieved and applied and reflect an exact, valid distributed execution starting right from the restored epoch. It is possible that a pipeline's dataflow graph consists of multiple weakly connected components. In case of a failure on a single of these connected components, rollback recovery can be applied only in the respective component, leaving other components' normal execution intact. This optimisation yields a more fine-grained recovery scheme and does not violate consistency since there are no data dependencies across disconnected components. 
