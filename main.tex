@@ -220,7 +220,18 @@
 % without further effort on your part as the last section in
 % the body of your article BEFORE References or any Appendices.
 
-%\numberofauthors{5} 
+%\numberofauthors{6} 
+
+%ordered by last name
+\numberofauthors{5}
+\author{
+\alignauthor Paris Carbone\textsuperscript{$\dagger$} \alignauthor Stephan Ewen\textsuperscript{$\ddagger$} \alignauthor Gyula F\'ora\textsuperscript{$\star$} \and \alignauthor Seif Haridi\textsuperscript{$\dagger$} \alignauthor Stefan Richter\textsuperscript{$\ddagger$} \alignauthor Kostas Tzoumas\textsuperscript{$\ddagger$} \and
+\\
+\begin{tabular}{*{3}{>{\centering}p{.31\textwidth}}}
+\affaddr{\textsuperscript{$\dagger$}KTH Royal Institute of Technology} \\ \affaddr{\{parisc,haridi\}@kth.se} & \affaddr{\textsuperscript{$\star$}King Digital Entertainment plc} \\ \affaddr{gyula.fora@king.com} & \affaddr{\textsuperscript{$\ddagger$}dataArtisans gmbh} \\ \affaddr{\{stephan,kostas,s.richter\} \\@data-artisans.com}
+\end{tabular}
+}
+\vspace{-5mm}
 
 %\author{
 %}
@@ -278,7 +289,9 @@
 \maketitle
 
 \begin{abstract}
-Stream processors often serve today as the main backbone for analytical but also mission critical services that encapsulate the core of persistent application logic in production. Thus, apart from low-latency, an emerging need is to provide strong consistency guarantees and fast adaptivity to cluster reconfigurations, software patches and partial failures that might potentially occur. Prior systems research has addressed several of these problems, however, the practical challenge lies on how such guarantees can be materialized in a transparent, non-intrusive manner that relieves the user from unnecessary constraints.\stefan{This statement basically sets it in the focus of the paper's contribution. I suggest that for each part, you particularly get back to how the implementation is transparent, non-intrusive and free of constraints.} Such needs served as the main design principles of state management in Apache Flink\textsuperscript{\textregistered}, an open source, scalable stream processor. 
+Stream processors often serve today as the main backbone for analytical but also mission critical services that encapsulate the core of persistent application logic in production. Thus, apart from low-latency, an emerging need is to provide strong consistency guarantees and fast adaptivity to cluster reconfigurations, software patches and partial failures that might potentially occur. Prior systems research has addressed several of these problems, however, the practical challenge lies on how such guarantees can be materialized in a transparent, non-intrusive manner that relieves the user from unnecessary constraints.
+%\stefan{This statement basically sets it in the focus of the paper's contribution. I suggest that for each part, you particularly get back to how the implementation is transparent, non-intrusive and free of constraints.} 
+Such needs served as the main design principles of state management in Apache Flink\textsuperscript{\textregistered}, an open source, scalable stream processor. 
 
 At Flink's core, an asynchronous in-band, snapshotting mechanism guarantees the creation of minimal, consistent distributed savepoints uninterruptedly\gyula{"uninterruptedly" here means that the savepoint is uninterrupted. What we want to say that the user computation is uninterrupted (or minimally interrupted)}. Savepoints cover all needs for system reconfiguration, fault tolerance and version management through coarse grained rollback recovery. Application state is explicit \gyula{to both system and UDF}, partitionable and transparently committed to persistent storage. We present Flink's lightweight mechanisms for state consistency, high availability and output commit while demonstrating how these mechanisms relate in practice with insights and associated trade-offs taken from real large-scale deployment experiences. Our use-case studies demonstrate the performance trade-offs of these techniques and the benefits of exploiting asynchrony in continuous, yet sustainable system deployments.
 \end{abstract}
