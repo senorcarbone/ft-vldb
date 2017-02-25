@@ -84,6 +84,9 @@ The protocol assumes a fail-recovery, deterministic process model \cite{elnozahy
 \para{III}: Tasks can trigger a \texttt{block} or \texttt{unblock} operation on their input data channels and \texttt{send} events (records or control messages) through their output channels.
 %\end{itemize}
 
+
+\subsubsection{Directed Acyclic Graphs}
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth / 2]{figures/snapshots-highlights.pdf}
@@ -91,10 +94,23 @@ The protocol assumes a fail-recovery, deterministic process model \cite{elnozahy
 \label{fig:snapshots-highlights}
 \vspace{-4mm}
 \end{figure}
-\subsubsection{Directed Acyclic Graphs}
+\begin{figure}[t!]
+\centering
+\includegraphics[width=\textwidth / 2]{figures/cycle-highlights.pdf}
+\caption{Cycle Snapshotting Highlights.} 
+\label{fig:cycle-highlights}
+\vspace{-4mm}
+\end{figure}
 
 
-\begin{algorithm}[t!]
+Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets initiated at the source tasks of the dataflow by the \texttt{TaskManager}, however, for simplicity we assume here that the logic gets initiated upon receiving a special marker event in each and every task (sources would ``receive'' that first through a $Nil$ channel). \autoref{alg:snapdag} summarizes the snapshot alignment and pipelining protocol that executes when a marker is received. Mind that markers and records are handled sequentially by the same underlying thread that also invokes user-defined operators. 
+
+\para{Alignment:} \autoref{fig:snapshots-highlights} vizualizes the steps prior to and during snapshotting in more detail. When a task receives a snapshot marker on one of its inputs it blocks that channel since all computation associated with the current epoch has to finish before continuing further (\autoref{fig:snapshots-highlights}(a)). The blocking operation might result into spilling of in-transit records within that channel to disk, if allocated memory for network buffers reaches its limit. Once markers have been received in all inputs (\autoref{fig:snapshots-highlights}(b)) the task can further notify downstream tasks while also proceeding with snapshotting. Markers are first broadcasted forward and then local snapshotting is triggered, both of which can progress concurrently without sacrificing consistency (\autoref{fig:snapshots-highlights}(c)). Depending on the backend support, snapshots can be triggered and executed asynchronously by another thread, thus, minimizing their impact to the overall throughput. Once local snapshotting is initiated (\autoref{fig:snapshots-highlights}(d)) input channels are unblocked and regular operation resumes to the next epoch. 
+
+\para{Relaxing Consistency}: It is possible, if a pipeline allows for relaxed consistency requirements, to disable alignment (i.e., no input blocking). Essentially, this means that a snapshot on epoch $n$ will contain side-effects of input residing in epochs $\geq n$. Upon a full graph rollback all records from epochs $> n$ are going to be ingested again, thus, resulting into more than one state updates. This type of consistency is also known as \emph{at-least-once processing} and evidently, on Flink, it comes at no cost by simply disabling alignment.
+
+
+\begin{algorithm}[h]
 $inputs$ $\leftarrow$ configured\_inputs\;
 $outputs$ $\leftarrow$ configured\_outputs\;
 $blocked \leftarrow \emptyset$ \;
@@ -119,12 +135,6 @@ $blocked \leftarrow \emptyset$ \;
 \caption{Snapshot Alignment}
 \label{alg:snapdag}
 \end{algorithm}
-
-Let us consider only directed acyclic graphs (DAGs) for now. The protocol gets initiated at the source tasks of the dataflow by the \texttt{TaskManager}, however, for simplicity we assume here that the logic gets initiated upon receiving a special marker event in each and every task (sources would ``receive'' that first through a $Nil$ channel). \autoref{alg:snapdag} summarizes the snapshot alignment and pipelining protocol that executes when a marker is received. Mind that markers and records are handled sequentially by the same underlying thread that also invokes user-defined operators. 
-
-\para{Alignment:} \autoref{fig:snapshots-highlights} vizualizes the steps prior to and during snapshotting in more detail. When a task receives a snapshot marker on one of its inputs it blocks that channel since all computation associated with the current epoch has to finish before continuing further (\autoref{fig:snapshots-highlights}(a)). The blocking operation might result into spilling of in-transit records within that channel to disk, if allocated memory for network buffers reaches its limit. Once markers have been received in all inputs (\autoref{fig:snapshots-highlights}(b)) the task can further notify downstream tasks while also proceeding with snapshotting. Markers are first broadcasted forward and then local snapshotting is triggered, both of which can progress concurrently without sacrificing consistency (\autoref{fig:snapshots-highlights}(c)). Depending on the backend support, snapshots can be triggered and executed asynchronously by another thread, thus, minimizing their impact to the overall throughput. Once local snapshotting is initiated (\autoref{fig:snapshots-highlights}(d)) input channels are unblocked and regular operation resumes to the next epoch. 
-
-\para{Relaxing Consistency}: It is possible, if a pipeline allows for relaxed consistency requirements, to disable alignment (i.e., no input blocking). Essentially, this means that a snapshot on epoch $n$ will contain side-effects of input residing in epochs $\geq n$. Upon a full graph rollback all records from epochs $> n$ are going to be ingested again, thus, resulting into more than one state updates. This type of consistency is also known as \emph{at-least-once processing} and evidently, on Flink, it comes at no cost by simply disabling alignment.
 
 \subsubsection{Dealing with Dataflow Cycles}
 
@@ -160,13 +170,7 @@ $out$.send($record$)\;
 \label{alg:snapcycle}
 \end{algorithm}
 
-\begin{figure}[t!]
-\centering
-\includegraphics[width=\textwidth / 2]{figures/cycle-highlights.pdf}
-\caption{Cycle Snapshotting Highlights.} 
-\label{fig:cycle-highlights}
-\vspace{-4mm}
-\end{figure}
+
 
 As described in detail in \autoref{alg:snapcycle} and also visualized in \autoref{fig:cycle-highlights}, \texttt{IterationHead} tasks receive a special marker from the runtime signifying each epoch, same as the sources of the dataflow graph. At that instance, they disseminate markers further within a cycle and start logging in their own managed state all in-transit events that exist within a cycle in that respective partition (\autoref{fig:cycle-highlights}(a)). Once the marker of the snapshot is received back through their respective collocated \texttt{IterationTail} (\autoref{fig:cycle-highlights}(c)) they trigger a snapshot of that log containing a complete backup of all transmitted records in that epoch (\autoref{fig:cycle-highlights}(d)). It is important to note that the default alignment logic executed by the rest of the tasks within a cycle (\autoref{fig:cycle-highlights}(b)) ensures that no records from succeeding epochs will transit prior to the marker. This special logic also restricts channel logging to cycles and does not enforce anything other than task states to be included in the snapshot for the rest of the dataflow graph.
 
