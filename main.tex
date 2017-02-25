@@ -50,6 +50,9 @@
 \usepackage{xcolor}
 
 
+\tolerance=5000
+
+%\usepackage[maxnames=2]{biblatex}
 
 \lstdefinelanguage{scala}{
   morekeywords={abstract,case,catch,class,def,%
@@ -223,7 +226,7 @@
 %\numberofauthors{6} 
 
 %ordered by last name
-\numberofauthors{5}
+\numberofauthors{3}
 \author{
 \alignauthor Paris Carbone\textsuperscript{$\dagger$} \alignauthor Stephan Ewen\textsuperscript{$\ddagger$} \alignauthor Gyula F\'ora\textsuperscript{$\star$} \and \alignauthor Seif Haridi\textsuperscript{$\dagger$} \alignauthor Stefan Richter\textsuperscript{$\ddagger$} \alignauthor Kostas Tzoumas\textsuperscript{$\ddagger$} \and
 \\
@@ -298,25 +301,32 @@ At Flink's core, an asynchronous in-band, snapshotting mechanism guarantees the 
 
 
 \input{intro}
-
+\balance
 \input{background}
-
+\balance
 \input{core}
 
 \input{implementation}
-
+\balance
 \input{evaluation}
-
+\balance
 \input{related}
-
+\balance
 \input{acknowledgements}
-
+\balance
 \input{conclusion}
 
 \balance
 
+\renewcommand\baselinestretch{0.97}
+{
+\small
 \bibliographystyle{abbrv}
-\bibliography{main}  
+\bibliography{main}
+}
+
+%\bibliographystyle{abbrv}
+%\bibliography{main}  
 
 
 %APPENDIX is optional.
@@ -324,8 +334,8 @@ At Flink's core, an asynchronous in-band, snapshotting mechanism guarantees the 
 % Example of an appendix; typically would start on a new page
 %pagebreak
 
-\begin{appendix}
-\end{appendix}
+%\begin{appendix}
+%\end{appendix}
 
 
 \end{document}
