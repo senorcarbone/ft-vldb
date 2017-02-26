@@ -8,6 +8,7 @@
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth / 2]{figures/graphs.pdf}
+\vspace*{-5mm}
 \caption{Dataflow Graph Representation Examples.} 
 \label{fig:graphs}
 \vspace{-4mm}
@@ -22,7 +23,7 @@ For local, per-task computation such as for example a partial machine learning t
 
 \para{\texttt{Keyed-State}}: Any data-parallel stream computation can be mapped to a user-defined key space and as a result any associated state will also scoped together with the computation. Typically, data stream records arrive to the system with some domain-specific key such as a user-session identifier, a device address or a geographical location. In the most general case, Flink allows for a user to map any record from its schema domain $\mathcal{S}$ to a given key space $\mathcal{K}$ via the $\texttt{keyby}: \mathcal{S} \rightarrow \mathcal{K}$ operation supported by the \texttt{DataStream} abstract type. Under key scope, state can be allocated dynamically within a user-defined function by using special collections that the model exposes through the API and vary depending on the nature of the state. For append-only state per key (e.g. for storing a pattern sequence or a window) there is a \texttt{ListState} collection supporting an \texttt{add} operation. If  the state is otherwise a value that mutates during the application logic, there is a \texttt{ValueState} type supporting an \texttt{update} operation. Other basic state types such as \texttt{ReduceState} further allow for one or two-step, on-the-fly, distributive function aggregations on managed state. Finally, \texttt{MapState} optimises key lookups and is preferred over having a custom map declared as a \texttt{ValueState} since full map deserialization is avoided for single key lookups.
 
-\para{\texttt{Operator-State}}: Another scope upon which state and computation can be declared is within the granularity of each parallel instance of a task (task-parallel). This is typical when part of a computation is only relevant to each physical stream partition, or simply when state cannot be scoped by a key. In cases where local operator state can be further divided into finer-grained units (e.g., in Kafka-ingesting data sources when each task instance has to keep track of multiple partitions in Kafka) the \texttt{ListState} type can be used to declare further state units. Both \texttt{Keyed-State} and \texttt{Operator-State} scopes can be used in combination within a single user-defined operator on Flink, allowing for multiple granularities to handle state and processing-logic.
+\para{\texttt{Operator-State}}: Another scope upon which state and computation can be declared is within the granularity of each parallel instance of a task (task-parallel). \texttt{Operator-State} is used when part of a computation is only relevant to each physical stream partition, or simply when state cannot be scoped by a key. In cases where \texttt{Operator-State} state can be further divided into finer-grained units (e.g., in Kafka-ingesting data sources when each task instance has to keep track of multiple partitions in Kafka) the \texttt{ListState} type can be used to declare further state units. Both \texttt{Keyed-State} and \texttt{Operator-State} scopes can be used in combination within a single user-defined operator on Flink, allowing for multiple granularities to handle state and processing-logic.
 
 %such as the source instances of a pipeline that correspond to Kafka consumers that map an active offset per partition
 %Operator-state types are similar to Keyed-State (i.e., \texttt{ListState}, \texttt{ValueState}), whereas
@@ -34,6 +35,7 @@ For local, per-task computation such as for example a partial machine learning t
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/snapshots-overview.pdf}
+\vspace*{-10mm}
 \caption{An Example of the Pipelined Snapshotting Protocol.} 
 \label{fig:snapshots-overview}
 \vspace{-4mm}
@@ -44,7 +46,7 @@ For local, per-task computation such as for example a partial machine learning t
 
 \para{Physical Representation}: The mapping of a logical graph $G$ to $G^* = \{\mathcal{T^*}, \mathcal{E^*}\}$, the physical, distributed execution graph (\autoref{fig:graphs}(c)) occurs when a pipeline is deployed, on its initial run or upon reconfiguration (e.g., for scale-out). During that stage each logical task $t \in \mathcal{T}$ is mapped to a number of physical tasks $t^1, t^2, \ldots, t^\pi \in \mathcal{T^*}$, each of which gets deployed to available containers throughout a cluster (e.g., using YARN \cite{vavilapalli2013apache} or Mesos \cite{hindman2011mesos}) up to the decided degree of parallelism $\pi \in \mathbb{N^+}$. 
 
-\para{Key-Space Partitioning}: For tasks that have declared managed keyed state, it is important to consistently allocate data stream partitions or re-allocate in the case of reconfiguration. For flexibility, Flink decouples key-space partitioning and state allocation similarly to Dynamo\cite{decandia2007dynamo}. Consider a user-defined key space $\mathcal{K}$. The runtime maps keys to an intermediate circular hash space of ``key-groups'' : $\mathcal{K}^* \subset \mathbb{N^+}$ given a maximum parallelism $\pi\text{-max}$ and a hash function $h$ as such:
+\para{Key-Groups}: For tasks that have declared managed keyed state, it is important to consistently allocate data stream partitions or re-allocate in the case of reconfiguration. For flexibility, Flink decouples key-space partitioning and state allocation similarly to Dynamo\cite{decandia2007dynamo}. Consider a user-defined key space $\mathcal{K}$. The runtime maps keys to an intermediate circular hash space of ``key-groups'' : $\mathcal{K}^* \subset \mathbb{N^+}$ given a maximum parallelism $\pi\text{-max}$ and a hash function $h$ as such:
 
 \noindent $\mathcal{K}^* = \{ h(k)\text{ \texttt{mod} }\pi\text{-max}\text{ }|\text{ }k \in \mathcal{K}, \pi\text{-max} \in \mathbb{N^+}, h: \mathcal{K} \rightarrow \mathbb{N^+} \}$
 
@@ -52,7 +54,7 @@ For local, per-task computation such as for example a partial machine learning t
 
 \para{State Re-Allocation}: To re-assign state, we employ an equal-sized  key-group range allocation. For $\pi$ parallel instances, each instance $t^i$ receives a range of key-groups from $\lceil i \times \frac{\pi\text{-max}}{\pi} \rceil$ to $\lfloor (i+1) \times \frac{\pi\text{-max}}{\pi} \rfloor$. Seeks are costly, especially in distributed file systems. Nevertheless, by assigning contiguous key-groups we eliminate unnecessary seeks and read congestion, yielding low latency upon re-allocation. 
 \texttt{Operator-State} entries, which cannot be scoped by a key, are persisted sequentially (combining potential finer-grained atomic states defined across tasks), per operator, within snapshots and re-assigned in round-robin.
-
+\TODOX{need to check broadcast state}
 % across $\pi$ parallel instances. 
 
 %\stefan{You could use the black-box explanation that I mentioned in earlier comments. Operator-state is simply reassigned in round-robin, aiming to balance the number of assigned states among all tasks as much as possible. Additionally, we also have features called global and broadcast state. It is fully implemented, but currently not exposed in public API. This feature is based on replicating operator state from one task to all tasks upon restart, where replication means that all receiver read this from the same source, they just get a handle. In global state, we do a one-to-all replication (initially only one task has this task, upon restart it is replicated to all tasks), in broadcast state, we do all-to-all. }
