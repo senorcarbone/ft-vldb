@@ -93,14 +93,14 @@ Tasks can trigger a \texttt{block} or \texttt{unblock} operation on their input 
 \includegraphics[width=\textwidth / 2]{figures/snapshots-highlights.pdf}
 \caption{Alignment and Snapshotting Highlights.} 
 \label{fig:snapshots-highlights}
-\vspace{-4mm}
+\vspace{-2mm}
 \end{figure}
 \begin{figure}[t!]
 \centering
 \includegraphics[width=\textwidth / 2]{figures/cycle-highlights.pdf}
 \caption{Cycle Snapshotting Highlights.} 
 \label{fig:cycle-highlights}
-\vspace{-4mm}
+\vspace{-2mm}
 \end{figure}
 
 
@@ -185,10 +185,11 @@ Distributed snapshots, described previously in \autoref{sec:snapshots} form the 
 \subsubsection{Savepoints and Usages}
 \label{sec:savepoints}
 Flink's snapshots offer a lightweight, yet complete ``picture'' of a pipeline which can be used in arbitrary ways to load and re-allocate otherwise complicated states right out from distributed storage. Snapshots are exposed to the user or operations engineer in the manageable and flexible form of \emph{savepoints}. A \emph{savepoint} is an externally stored snapshot (i.e., the metadata pointing to pipeline state) that can be managed by users for various custom operational needs. For example, when a new version of the system is released it is recommended to trigger a savepoint for each active pipeline, upgrade the system, and then restore all pending computations at the epoch that they were left of. Other common usages of savepoints are to update application logic (e.g., software patches) of already running jobs by replacing operators accessing the same snapshotted state or adding new state entries instead. In turn, the ability to restore computation and repartition state on updated application logic further enables forking and versioning capabilities, similarly to version control systems, yet in a distributed continuous processing environment (an example depicted in \autoref{fig:savepoints}). Finally, Flink also allows periodic snapshots to be externalized in the form of savepoints on configured directories for cases where manual savepoint archiving and bookkeeping is preferred and perhaps keep a logged history of the overall computation. 
-
-\begin{figure}[h]
+\vspace{-2mm}
+\begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth / 2]{figures/savepointsexamples.pdf}
+\vspace{-6mm}
 \caption{Savepoint usage examples.} 
 \label{fig:savepoints}
 \vspace{-4mm}
