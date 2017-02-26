@@ -7,9 +7,10 @@
 \vspace{-4mm}
 \end{figure*}
 
-
+\vspace{-2mm}
 \section{Preliminaries}
 \label{sec:preliminaries}
+\vspace{-1mm}
 \subsection{The Apache Flink System}
 The Apache Flink system \cite{CUSTOM:web/Flink} is an open-source project that provides a full software stack for programming, compiling and running distributed continuous data processing pipelines (\autoref{fig:flink-overview}(a)). Pipelines can be written as a series of data-centric transformations expressed in a fluid, functional programming API (in Scala, Java or Python) inspired by Flume Java\cite{chambers2010flumejava}, Dryad LINQ\cite{yu2008dryadlinq}, Naiad\cite{murray2013naiad} and based in its majority on Google's Dataflow Model \cite{akidau2015dataflow} (i.e., identical windowing semantics and out-of-order processing logic). At the core of the model there are two basic abstract data types, the \emph{DataSet} and \emph{DataStream} representations which target bounded and unbounded datasets respectively. Computation declared using the available higher-level domain-specific libraries such as the SQL and Machine Learning (ML) packages, translates into a logical pipeline using these core representations. A major distinctive trait of the Flink programming model compared to state of the art is the capability to declare local or partitioned, persistent application state within continuous user-defined transformations through managed data collections with diverse properties (append-only, mutable, etc.). Flink's runtime ensures that consistency is guaranteed for any managed state declared despite potential partial failures or reconfigurations, such as updates to the application code or changes in execution parallelism.
 

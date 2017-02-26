@@ -5,7 +5,9 @@
 
 \subsection{System Model}
 
-\begin{figure}[h]
+Each processing pipeline in Flink is first defined into a logical directed graph $G = (\mathcal{T}, \mathcal{E})$ where $\mathcal{T}$ is a set of vertices representing compute tasks and $\mathcal{E}$ is a set of edges representing data subscriptions between tasks in $\mathcal{T}$ (\autoref{fig:graphs}(a)). Data subscriptions can apply arbitrarily between tasks in $\mathcal{T}$, addressing the dependencies prescribed directly or indirectly via the programming model (e.g., forward, shuffle and hash partitioning). A task $t \in \mathcal{T}$ can encapsulate the logic of a single operation (e.g., \texttt{map}, \texttt{filter}, \texttt{fold}, \texttt{window}). However, standard logical dataflow optimisations  such as fusion \cite{hirzel2014catalog,chambers2010flumejava} are also applied in an intermediate step allowing multiple operators to share the same task in $\mathcal{T}$ (\autoref{fig:graphs}(b)). Each logical graph is directly mapped to a physical, distributed graph $G^*$ upon deployment or rescaling (\autoref{fig:graphs}(c)). In the rest of this section we are going to introduce the concept of managed state in Apache Flink, followed by physical state partitioning and a description of how state and data are being allocated to tasks.
+
+\begin{figure}[t]
 \centering
 \includegraphics[width=\textwidth / 2]{figures/graphs.pdf}
 \vspace*{-5mm}
@@ -13,8 +15,6 @@
 \label{fig:graphs}
 \vspace{-4mm}
 \end{figure}
-
-Each processing pipeline in Flink is first defined into a logical directed graph $G = (\mathcal{T}, \mathcal{E})$ where $\mathcal{T}$ is a set of vertices representing compute tasks and $\mathcal{E}$ is a set of edges representing data subscriptions between tasks in $\mathcal{T}$ (\autoref{fig:graphs}(a)). Data subscriptions can apply arbitrarily between tasks in $\mathcal{T}$, addressing the dependencies prescribed directly or indirectly via the programming model (e.g., forward, shuffle and hash partitioning). A task $t \in \mathcal{T}$ can encapsulate the logic of a single operation (e.g., \texttt{map}, \texttt{filter}, \texttt{fold}, \texttt{window}). However, standard logical dataflow optimisations  such as fusion \cite{hirzel2014catalog,chambers2010flumejava} are also applied in an intermediate step allowing multiple operators to share the same task in $\mathcal{T}$ (\autoref{fig:graphs}(b)). Each logical graph is directly mapped to a physical, distributed graph $G^*$ upon deployment or rescaling (\autoref{fig:graphs}(c)). In the rest of this section we are going to introduce the concept of managed state in Apache Flink, followed by physical state partitioning and a description of how state and data are being allocated to tasks.
 
 \subsubsection{Managed State}
 \label{sec:managedstate}
