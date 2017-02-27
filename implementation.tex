@@ -11,7 +11,7 @@ With explicit managed state and consistent snapshotting at its core, Flink maint
 
 Managed state consistency is coordinated by Flink's snapshotting algorithm (\autoref{sec:snapshots}), however it is the responsibility of the state backends to define access to the state and how the a snapshot of the state governed by the parallel task is taken. Based on how the state of each particular operator is stored and accessed we can distinguish two main classes of state backends. 1) Backends that hold state of the operators locally and 2) backends that backends that store the state in an external system such as a database or a key/value store.
 
-Local state backends can keep their state completely in-memory, out-of-core or often as a combination of these approaches 
+Local state backends can keep their state completely in-memory , out-of-core or often as a combination of these approaches as done by RocksDB for instance.
 
 Depending on the overall expected managed state accumulated in a pipeline, each of the backends offers a suitable trade-off between throughput and scalability.
 
