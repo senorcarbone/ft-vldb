@@ -26,6 +26,7 @@
 \usepackage{nicefrac}
 %\usepackage{ulem}
 
+\usepackage{times}
 
 % \usepackage[amsthm]{ntheorem}
 % \usepackage{chngcntr}
@@ -45,6 +46,7 @@
 \usepackage{oubraces}
 \usepackage{subcaption}
 \usepackage{placeins}
+%\usepackage{biblatex}
 
 % \usepackage[vlined, ruled, boxed]{algorithm2e}
 \usepackage[vlined,ruled]{algorithm2e}
@@ -57,6 +59,12 @@
 
 \clubpenalty=500 
 \widowpenalty = 1000 
+
+%\setcounter{biburllcpenalty}{7000}
+%\setcounter{biburlucpenalty}{8000}
+
+%hack for urls
+\def\UrlBreaks{\do\/\do-}
 
 %\usepackage[maxnames=2]{biblatex}
 
@@ -235,7 +243,7 @@
 \alignauthor Paris Carbone\textsuperscript{$\dagger$} \alignauthor Stephan Ewen\textsuperscript{$\ddagger$} \alignauthor Gyula F\'ora\textsuperscript{$\star$} \and \alignauthor Seif Haridi\textsuperscript{$\dagger$} \alignauthor Stefan Richter\textsuperscript{$\ddagger$} \alignauthor Kostas Tzoumas\textsuperscript{$\ddagger$} \and
 \\
 \begin{tabular}{*{3}{>{\centering}p{.31\textwidth}}}
-\affaddr{\textsuperscript{$\dagger$}KTH Royal Institute of Technology} \\ \affaddr{\{parisc,haridi\}@kth.se} & \affaddr{\textsuperscript{$\star$}King Digital Entertainment plc} \\ \affaddr{gyula.fora@king.com} & \affaddr{\textsuperscript{$\ddagger$}data Artisans} \\ \affaddr{\{stephan,s.richter,kostas\} \\@data-artisans.com}
+\affaddr{\textsuperscript{$\dagger$}KTH Royal Institute of Technology} \\ \affaddr{\{parisc,haridi\}@kth.se} & \affaddr{\textsuperscript{$\star$}King Digital Entertainment Limited} \\ \affaddr{gyula.fora@king.com} & \affaddr{\textsuperscript{$\ddagger$}data Artisans} \\ \affaddr{\{stephan,s.richter,kostas\} \\@data-artisans.com}
 \end{tabular}
 }
 \vspace{-5mm}
@@ -295,11 +303,11 @@
 \maketitle
 
 \begin{abstract}
-Stream processors often serve today as the main backbone for analytical but also mission critical services that encapsulate the core of persistent application logic in production. Thus, apart from low-latency, an emerging need is to provide strong consistency guarantees and fast adaptivity to cluster reconfigurations, software patches and partial failures, which might potentially occur. Prior systems research has addressed several of these problems, however, the practical challenge lies on how such guarantees can be materialized in a transparent, non-intrusive manner that relieves the user from unnecessary constraints.
+Stream processors are emerging in industry as a paradigm that drives analytical but also mission critical services that encapsulate the core of persistent application logic. Thus, apart from low-latency, an emerging need is to provide first-class support for application state together with strong consistency guarantees and fast adaptivity to cluster reconfigurations, software patches and partial failures. Prior systems research has addressed some of these problems. However, the practical challenge lies on how such guarantees can be materialized in a transparent, non-intrusive manner that relieves the user from unnecessary constraints.
 %\stefan{This statement basically sets it in the focus of the paper's contribution. I suggest that for each part, you particularly get back to how the implementation is transparent, non-intrusive and free of constraints.} 
 Such needs served as the main design principles of state management in Apache Flink\textsuperscript{\textregistered}, an open source, scalable stream processor. 
 
-At Flink's core, an asynchronous in-band, snapshotting mechanism guarantees the creation of lightweight, consistent, distributed snapshots, progressively without impacting continuous progress. Consistent snapshots cover all needs for system reconfiguration, fault tolerance and version management through coarse grained rollback recovery. Application state is declared explicitly to the system, allowing efficient partitioning and transparent commits to persistent storage. We further present Flink's backend implementations, and mechanisms for high availability and output commit. Finally, we demonstrate how these mechanisms behave in practice with metrics and large-deployment insights exhibiting the low performance trade-offs of our approach and the general benefits of exploiting asynchrony in continuous, yet sustainable system deployments.
+At Flink's core, an asynchronous in-band, snapshotting mechanism guarantees the creation of lightweight, consistent, distributed snapshots of application state, progressively without impacting continuous progress. Consistent snapshots cover all needs for system reconfiguration, fault tolerance and version management through coarse grained rollback recovery. Application state is declared explicitly to the system, allowing efficient partitioning and transparent commits to persistent storage. We further present Flink's backend implementations, and mechanisms for high availability and output commit. Finally, we demonstrate how these mechanisms behave in practice with metrics and large-deployment insights exhibiting the low performance trade-offs of our approach and the general benefits of exploiting asynchrony in continuous, yet sustainable system deployments.
 
 \end{abstract}
 
@@ -321,8 +329,12 @@ At Flink's core, an asynchronous in-band, snapshotting mechanism guarantees the 
 \input{conclusion}
 
 \balance
+%\Urlmuskip=0mu plus 2mu\relax
 
-\renewcommand\baselinestretch{0.97}
+
+
+
+\renewcommand\baselinestretch{0.99}
 {
 \small
 \bibliographystyle{abbrv}
