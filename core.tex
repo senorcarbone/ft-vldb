@@ -87,7 +87,7 @@ Instead, Flink's snapshotting protocol pipelines progressively the partial acqui
 The protocol assumes a fail-recovery, deterministic process model \cite{elnozahy2002survey} where a partial process failure can be masked by redeployment and restoration of prior operational states. In detail, our protocol builds on the following assumptions:
 
 %\begin{itemize}
-\para{I}: Input data streams are durably logged and indexed externally allowing dataflow sources to re-consume their input, upon recovery, from a specific logical time (offset) by restoring their state. This functionality is typically provided by file systems and message queues such as Apache Kafka \cite{kreps2011kafka}
+\para{I}: Input data streams are durably logged and indexed externally allowing dataflow sources to re-consume their input, upon recovery, from a specific logical time (offset) by restoring their state. This functionality is typically provided by file systems and message queues such as Apache Kafka \cite{kreps2011kafka}.
 %\stephan{Minor comment: We don't actually need strict offset replay - we simply need to "mark" input such that we can replay from that "mark". This can also be obtained by deferring acknowledgement to the message queue, causing it to
 %replay elements (as we do with RabbitMQ)}
 %If that is not supported, similar logging functionality has to be implemented at the sources of the pipeline. 
